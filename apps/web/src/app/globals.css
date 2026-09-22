@@ -1,0 +1,218 @@
+@import "tailwindcss";
+
+/*
+ * PORT — "the deed". Paper and ink, with four identity inks that never change meaning:
+ *   wallet (connected)  → blue-black ink
+ *   owner (Core owner)  → vermilion, the colour of a seal that moves with the title
+ *   signer (Asset Signer) → verdigris, the vault that never moves
+ *   agent (executive)   → ochre
+ */
+:root {
+  --paper: #f3eee3;
+  --paper-2: #ebe4d4;
+  --card: #fbf8f1;
+  --ink: #1b1a17;
+  --ink-2: #4a463d;
+  --ink-3: #8a8373;
+  --rule: #d8cfbb;
+  --rule-strong: #b9ad93;
+  --wallet: #243b6b;
+  --owner: #c2410c;
+  --owner-soft: #f6dccb;
+  --signer: #0f766e;
+  --signer-soft: #d3ebe5;
+  --agent: #a16207;
+  --agent-soft: #f2e4c3;
+  --pass: #15803d;
+  --fail: #b91c1c;
+  --fail-soft: #f7d9d4;
+  --shadow: 0 1px 0 rgba(27, 26, 23, 0.04), 0 12px 32px -18px rgba(27, 26, 23, 0.35);
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #13120f;
+    --paper-2: #1b1a16;
+    --card: #1d1b17;
+    --ink: #f1ebdc;
+    --ink-2: #c9c0ab;
+    --ink-3: #8c846f;
+    --rule: #343027;
+    --rule-strong: #4a4536;
+    --wallet: #9db4e8;
+    --owner: #fb7d45;
+    --owner-soft: #3a2014;
+    --signer: #4fd1bd;
+    --signer-soft: #10302b;
+    --agent: #e8b64c;
+    --agent-soft: #33280f;
+    --pass: #4ade80;
+    --fail: #f87171;
+    --fail-soft: #3a1717;
+    --shadow: 0 1px 0 rgba(0, 0, 0, 0.3), 0 16px 40px -20px rgba(0, 0, 0, 0.8);
+    color-scheme: dark;
+  }
+}
+
+@theme inline {
+  --color-paper: var(--paper);
+  --color-paper-2: var(--paper-2);
+  --color-card: var(--card);
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-ink-3: var(--ink-3);
+  --color-rule: var(--rule);
+  --color-rule-strong: var(--rule-strong);
+  --color-wallet: var(--wallet);
+  --color-owner: var(--owner);
+  --color-owner-soft: var(--owner-soft);
+  --color-signer: var(--signer);
+  --color-signer-soft: var(--signer-soft);
+  --color-agent: var(--agent);
+  --color-agent-soft: var(--agent-soft);
+  --color-pass: var(--pass);
+  --color-fail: var(--fail);
+  --color-fail-soft: var(--fail-soft);
+  --font-display: var(--font-instrument), "Times New Roman", serif;
+  --font-sans: var(--font-schibsted), ui-sans-serif, sans-serif;
+  --font-mono: var(--font-jetbrains), ui-monospace, monospace;
+}
+
+html,
+body {
+  background: var(--paper);
+  color: var(--ink);
+}
+
+body {
+  font-family: var(--font-sans);
+  font-feature-settings: "ss01", "tnum";
+  min-height: 100dvh;
+  /* faint engraved guilloché so the page reads as a document, not a dashboard */
+  background-image:
+    radial-gradient(circle at 18% -10%, color-mix(in oklab, var(--owner) 7%, transparent) 0, transparent 38%),
+    radial-gradient(circle at 110% 30%, color-mix(in oklab, var(--signer) 7%, transparent) 0, transparent 40%),
+    repeating-linear-gradient(0deg, transparent 0 23px, color-mix(in oklab, var(--rule) 45%, transparent) 23px 24px);
+  background-attachment: fixed;
+}
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--rule);
+  border-radius: 14px;
+  box-shadow: var(--shadow);
+}
+
+.eyebrow {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+.num {
+  font-variant-numeric: tabular-nums;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border-radius: 999px;
+  padding: 0.55rem 1.05rem;
+  font-weight: 600;
+  font-size: 0.875rem;
+  border: 1px solid var(--ink);
+  background: var(--ink);
+  color: var(--paper);
+  transition: transform 0.12s ease, opacity 0.12s ease, background 0.12s ease;
+}
+.btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+.btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.btn-ghost {
+  background: transparent;
+  color: var(--ink);
+  border-color: var(--rule-strong);
+}
+.btn-owner {
+  background: var(--owner);
+  border-color: var(--owner);
+  color: #fff8f1;
+}
+.btn-agent {
+  background: var(--agent);
+  border-color: var(--agent);
+  color: #fffaf0;
+}
+
+.input {
+  width: 100%;
+  border-radius: 10px;
+  border: 1px solid var(--rule-strong);
+  background: var(--paper);
+  padding: 0.55rem 0.75rem;
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  color: var(--ink);
+}
+.input:focus {
+  outline: 2px solid color-mix(in oklab, var(--wallet) 45%, transparent);
+  outline-offset: 1px;
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.rise {
+  animation: rise 0.6s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+
+@keyframes stamp {
+  0% {
+    opacity: 0;
+    transform: scale(1.6) rotate(-14deg);
+  }
+  60% {
+    opacity: 1;
+    transform: scale(0.94) rotate(-8deg);
+  }
+  100% {
+    transform: scale(1) rotate(-8deg);
+  }
+}
+.stamp {
+  animation: stamp 0.7s cubic-bezier(0.2, 0.9, 0.3, 1.2) both;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.seal-ring {
+  animation: spin 40s linear infinite;
+  transform-origin: center;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rise,
+  .stamp,
+  .seal-ring {
+    animation: none;
+  }
+}

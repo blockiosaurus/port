@@ -79,15 +79,25 @@ export type MarketProbe = { bidE8: bigint; askE8: bigint };
  * charged separately in execution checks.
  */
 const probeCache = new Map<string, MarketProbe & { at: number }>();
+const inflight = new Map<string, Promise<MarketProbe & { at: number }>>();
 
 /** Cached for `ttlSeconds`; `at` is the true fetch time and becomes the snapshot publish time. */
-export async function probeJupiterMarketCached(jup: JupiterTradeAdapter, mint: string, decimals: number, ttlSeconds = 20): Promise<MarketProbe & { at: number }> {
+export async function probeJupiterMarketCached(jup: JupiterTradeAdapter, mint: string, decimals: number, ttlSeconds = 30): Promise<MarketProbe & { at: number }> {
   const hit = probeCache.get(mint);
   const now = Math.floor(Date.now() / 1000);
   if (hit && now - hit.at <= ttlSeconds) return hit;
-  const fresh = { ...(await probeJupiterMarket(jup, mint, decimals)), at: now };
-  probeCache.set(mint, fresh);
-  return fresh;
+  // Concurrent snapshot requests share one probe instead of queueing duplicate quotes.
+  const pending = inflight.get(mint);
+  if (pending) return pending;
+  const p = probeJupiterMarket(jup, mint, decimals)
+    .then((m) => {
+      const fresh = { ...m, at: Math.floor(Date.now() / 1000) };
+      probeCache.set(mint, fresh);
+      return fresh;
+    })
+    .finally(() => inflight.delete(mint));
+  inflight.set(mint, p);
+  return p;
 }
 
 export async function probeJupiterMarket(jup: JupiterTradeAdapter, mint: string, decimals: number, sizeUsd = 100): Promise<MarketProbe> {

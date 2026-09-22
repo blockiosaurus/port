@@ -23,7 +23,7 @@ export const DEMO_STRATEGY: PortStrategy = PortStrategySchema.parse({
   minCashWeightBps: 500,
   rebalanceToleranceBps: 300,
   maxPositionWeightBps: 3500,
-  maxTradeNavBps: 2000,
+  maxTradeNavBps: 3000,
   maxPriceAgeSeconds: 90,
   maxSpreadBps: 250,
   highVolatilityThresholdBps: 300,

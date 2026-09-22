@@ -5,6 +5,7 @@ export type PortErrorCode =
   | "PROGRAM_NOT_ALLOWED"
   | "UNEXPECTED_SIGNER"
   | "INVALID_STRATEGY"
+  | "SLIPPAGE_EXCEEDED"
   | "TX_FAILED";
 
 export class PortError extends Error {
@@ -26,6 +27,9 @@ export function toPortError(e: unknown): PortError {
   const logs = err?.transactionLogs ?? err?.logs;
   if (/Neither the asset or any plugins have approved|0x1a/.test(message))
     return new PortError("NOT_AUTHORIZED", "The signer is neither the PORT owner nor an active execution delegate.", logs);
+  // Jupiter v6 SlippageToleranceExceeded (6001), surfaced through Core Execute's CPI.
+  if (/0x1771\b/.test(message) || logs?.some((l) => /JUP6.* failed: custom program error: 0x1771/.test(l)))
+    return new PortError("SLIPPAGE_EXCEEDED", "On-chain minimum-out protection refused the fill: the pool moved beyond the approved slippage.", logs);
   const lines = message.split("\n").map((l) => l.trim()).filter(Boolean);
   const detail = lines.find((l) => /^Message:|Error|failed/i.test(l) && !/^Simulation failed\.?$/.test(l)) ?? lines[0] ?? message;
   return new PortError("TX_FAILED", detail, logs);

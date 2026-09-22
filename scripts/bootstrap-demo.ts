@@ -1,8 +1,11 @@
 /**
  * One-command demo on the local mainnet fork (pnpm demo:fork must be running):
- *   Wallet A creates "AI Private Markets Fund #001", deposits USDC, buys PreStocks through
- *   Core Execute, delegates to the agent executive, the agent rebalances, A transfers the PORT
- *   to Wallet B, and B trades. Writes .demo/state.json for the web app and verify script.
+ *   Wallet A creates "AI Private Markets Fund #001", deposits USDC, buys OpenAI PreStocks
+ *   through Core Execute, delegates to the agent executive, the agent completes the mandate,
+ *   A transfers the PORT to Wallet B, and B trades. Writes .demo/state.json.
+ *
+ * Use a freshly started fork: Jupiter quotes mainnet pools, while trades here move the cloned
+ * pools, so repeated buys in the same pool on one fork trip the on-chain min-out protection.
  *
  * Wallet keys are throwaway fork burners stored under .keys/ (gitignored).
  */
@@ -70,10 +73,11 @@ await activity.append({ portAsset: asset, actor: A.publicKey, authority: "owner"
 const summarize = (r: Awaited<ReturnType<typeof executeRebalance>>) =>
   r.results.map((x) => `${x.activity.status.padEnd(9)} ${x.trade.side} ${x.trade.symbol} ${usdE8(x.trade.notionalE8)}${x.activity.signature ? ` ${x.activity.signature.slice(0, 16)}…` : ""}${x.decision.allowed ? "" : ` BLOCKED: ${x.decision.checks.filter((c) => !c.passed).map((c) => c.code).join(",")}`}`).join("\n  ") || "(no trades)";
 
-log("Wallet A (owner) buys PreStocks through Core Execute");
-const r1 = await executeRebalance(ctxFor(A), asset, "owner");
-for (const w of r1.proposal.snapshot.warnings) console.log(`  ⚠ ${w}`);
-console.log(`  ${r1.proposal.plan.rationale}\n  ${summarize(r1)}`);
+log("Wallet A (owner) buys OpenAI PreStocks through Core Execute");
+const own = await proposeTrade(ctxFor(A), asset, { side: "buy", symbol: "OPENAI", notionalUsd: ((DEPOSIT_USDC * 28n) / 100n / 1_000_000n).toString() });
+for (const w of own.snapshot.warnings) console.log(`  ⚠ ${w}`);
+const ownRes = await executeEvaluated(ctxFor(A), asset, own.trade, "owner");
+console.log(`  ${ownRes.status} buy OPENAI ${usdE8(own.trade.trade.notionalE8)} ${ownRes.signature ?? summarizeBlocked(own.trade.decision)}`);
 
 log("Agent executive registers; Wallet A delegates execution");
 const ue = makeUmi(RPC, executive);
@@ -81,7 +85,7 @@ const reg = await ensureExecutive(ue);
 const del = await delegateExecution(ua, asset, executive.publicKey);
 await activity.append({ portAsset: asset, actor: A.publicKey, authority: "owner", action: "delegate", status: "confirmed", signature: del.signature, details: { executive: executive.publicKey, registered: reg?.signature ?? "already" } });
 
-log("Agent rebalances under delegated Core Execute");
+log("Agent completes the mandate under delegated Core Execute");
 const r2 = await executeRebalance(ctxFor(executive), asset, "delegate");
 console.log(`  ${r2.proposal.plan.rationale}\n  ${summarize(r2)}`);
 
@@ -96,9 +100,9 @@ console.log(`  balances unchanged: ${JSON.stringify(before.balances.map((b) => b
 console.log(`  delegates inherited by B: ${after.delegates.map((d) => d.executiveAuthority).join(", ") || "none"}`);
 
 log("Wallet B (new owner) trades");
-const p = await proposeTrade(ctxFor(B), asset, { side: "buy", symbol: "ANDURIL", notionalUsd: "50" });
+const p = await proposeTrade(ctxFor(B), asset, { side: "sell", symbol: "ANDURIL", notionalUsd: "50" });
 const b = await executeEvaluated(ctxFor(B), asset, p.trade, "owner");
-console.log(`  ${b.status} buy ANDURIL $50 ${b.signature ?? summarizeBlocked(p.trade.decision)}`);
+console.log(`  ${b.status} sell ANDURIL $50 ${b.signature ?? summarizeBlocked(p.trade.decision)}`);
 
 await writeFile(".demo/state.json", JSON.stringify({
   rpcUrl: RPC, cluster: "fork", asset, assetSigner: created.signer, walletA: A.publicKey, walletB: B.publicKey, executive: executive.publicKey,
