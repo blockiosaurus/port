@@ -1,5 +1,5 @@
 "use client";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
 import { createSignerFromKeypair, generateSigner, publicKey, type Instruction, type Signer, type Umi } from "@metaplex-foundation/umi";
 import { base64 } from "@metaplex-foundation/umi/serializers";
 import {
@@ -52,20 +52,31 @@ function loadWallets(): Wallet[] {
   return wallets;
 }
 
-export function useWallets() {
-  const [wallets, setWallets] = useState<Wallet[]>([]);
-  const [active, setActiveState] = useState<0 | 1>(0);
-  useEffect(() => {
-    setWallets(loadWallets());
+// Browser-only state read through useSyncExternalStore: stable snapshots, empty on the server.
+let walletCache: Wallet[] | null = null;
+let activeCache: 0 | 1 = 0;
+const listeners = new Set<() => void>();
+const EMPTY: Wallet[] = [];
+const subscribe = (fn: () => void) => (listeners.add(fn), () => listeners.delete(fn));
+function walletSnapshot(): Wallet[] {
+  if (!walletCache) {
+    walletCache = loadWallets();
     try {
-      setActiveState(localStorage.getItem("port.activeWallet") === "1" ? 1 : 0);
+      activeCache = localStorage.getItem("port.activeWallet") === "1" ? 1 : 0;
     } catch {}
-  }, []);
+  }
+  return walletCache;
+}
+
+export function useWallets() {
+  const wallets = useSyncExternalStore(subscribe, walletSnapshot, () => EMPTY);
+  const active = useSyncExternalStore(subscribe, () => (walletSnapshot(), activeCache), () => 0 as const);
   const setActive = useCallback((i: 0 | 1) => {
-    setActiveState(i);
+    activeCache = i;
     try {
       localStorage.setItem("port.activeWallet", String(i));
     } catch {}
+    listeners.forEach((l) => l());
   }, []);
   return { wallets, active: wallets[active], activeIndex: active, setActive };
 }
@@ -144,8 +155,15 @@ export function rememberedPorts(): string[] {
     return [];
   }
 }
+
+let portsCache: string[] | null = null;
+const NO_PORTS: string[] = [];
+export function useRememberedPorts(): string[] {
+  return useSyncExternalStore(subscribe, () => (portsCache ??= rememberedPorts()), () => NO_PORTS);
+}
 export function rememberPort(asset: string) {
   try {
     localStorage.setItem("port.ports", JSON.stringify([asset, ...rememberedPorts().filter((a) => a !== asset)].slice(0, 12)));
+    portsCache = null;
   } catch {}
 }

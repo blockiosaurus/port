@@ -15,7 +15,8 @@
     "demo:fork": "bash .demo/fork/validator.sh",
     "test:fork-trade": "tsx scripts/fork-trade.ts",
     "demo:reset": "bash scripts/demo-reset.sh",
-    "demo:agent-market": "tsx scripts/launch-agent-market.ts"
+    "demo:agent-market": "tsx scripts/launch-agent-market.ts",
+    "demo": "bash scripts/demo-all.sh"
   },
   "devDependencies": {
     "@types/node": "^26.6.2",

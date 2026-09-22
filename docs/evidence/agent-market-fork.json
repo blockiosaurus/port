@@ -1,13 +1,13 @@
 {
-  "config": "12mYP3ibG8bMZ6znGdBRe5X6ce6QWQjKMVcYDcSkyWfd",
-  "pool": "HP6MHxiZtbsqCsVws9SSLndFVkFFGdZVkH5DKzTmkf6g",
-  "baseMint": "86chKKazGMKWHUEakDpABobPrdQagNA7zVABh8K6fA7s",
+  "config": "BmVkUMKjB3Twjyj4G52gLmAoRtRCCVDjm73VwuANu3J4",
+  "pool": "FkWWEdKUmkjGXT4vV5hEPH1uBT7DyRXFJpdCsMyvV5eX",
+  "baseMint": "9fyjxekiYaQcUjQcxxQMuvnNrBaoWh24u2YqhbcuzV1E",
   "quoteMint": "Xsc9qvGR1efVDFGLrVsmkzv3qi45LTBjeUKSPmx9qEh",
   "feeClaimer": "HNY1EcvwsKvXSG3mr4Ha3EsANYvy1dS6PpUWL4HQtAxo",
   "signatures": {
-    "createConfigAndPool": "2EZYzRJwFaYiCDWmn4zUkWJzfFCEruJLKdh1rXsPqhLehTuWXeTczgAkXx3bw39jKX4MH9nnUQ1pLoutnh47BABk",
-    "nvdaxAcquire": "2qX8bD65ru6E5YwMgqT7pzPTLZCkPP7RrXouqnXiFN3tGdBJyJyBTVz2EXzQc1fLPZAbQgpwV8iiA4zCDoujzM3w",
-    "firstBuy": "5BFRSG1y8LdKpRH35z4AR6iKdhsHrcUCSjoogqFeENfUwiAsQAy59G7pc1G224SjTk7JmabbSM2d1tAz9QjaqjCF"
+    "createConfigAndPool": "4f9cYa5Rj5nCTHqZMLPzWncMq2NqNjLeKRbpntfWbeQiiciygxfnca4hz6Zm13heTmB9MBqXyCNchkSw8m4MwH47",
+    "nvdaxAcquire": "4AGfqhiTz3yQHgDxRd8GK4zf3MDyK69k2MVBp2297sKsKYyCRcfjMVcHnJgaL9pHwsxzf971CVv2egxnr94MbvCe",
+    "firstBuy": "4U59vrMMc5b1XBFcX16sTen4uhKTCsaBCan8wsjtGvj68JnGyKRVEnYasWzpkYCntcPcaQzbPG2TeP5T3qPgsSCB"
   },
   "design": {
     "name": "PORT Agent 001",
@@ -32,8 +32,8 @@
     }
   },
   "state": {
-    "pool": "HP6MHxiZtbsqCsVws9SSLndFVkFFGdZVkH5DKzTmkf6g",
-    "baseMint": "86chKKazGMKWHUEakDpABobPrdQagNA7zVABh8K6fA7s",
+    "pool": "FkWWEdKUmkjGXT4vV5hEPH1uBT7DyRXFJpdCsMyvV5eX",
+    "baseMint": "9fyjxekiYaQcUjQcxxQMuvnNrBaoWh24u2YqhbcuzV1E",
     "quoteMint": "Xsc9qvGR1efVDFGLrVsmkzv3qi45LTBjeUKSPmx9qEh",
     "quoteReserve": "49500000",
     "baseReserve": "862081007992797",
@@ -46,5 +46,5 @@
   },
   "disclaimer": "The agent token is a market for the autonomous operator and its community. It is not equity, a fund share, a security, or a claim on the PORT portfolio or its fees. PORT is hackathon software; nothing here is investment advice.",
   "cluster": "fork",
-  "createdAt": "2026-09-22T13:53:22.525Z"
+  "createdAt": "2026-09-22T13:57:34.989Z"
 }

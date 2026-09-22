@@ -6,7 +6,7 @@ import {
   actionDelegate, actionDeposit, actionRevoke, actionTrade, actionTransfer, api, faucet, rememberPort, umiFor, useWallets, type Wallet,
 } from "@/lib/client";
 import type { PortViewDto, ProposalDto, SnapshotDto, TradeDto } from "@/lib/dto";
-import { ago, pct, short, units, usd } from "@/lib/format";
+import { pct, short, units, usd } from "@/lib/format";
 import { Banner, Checks, IdentityChip, Modal, Seal, Shell, TxLink } from "@/components/ui";
 import { AgentMarket } from "@/components/AgentMarket";
 
@@ -25,20 +25,26 @@ export default function Dashboard({ asset }: { asset: string }) {
   const [tradeOpen, setTradeOpen] = useState(false);
   const [proof, setProof] = useState<TransferProof | null>(null);
 
-  const refresh = useCallback(async () => {
-    try {
-      setView(await api<PortViewDto>(`/api/port/${asset}`));
-      setLoadError(null);
-    } catch (e) {
-      setLoadError((e as Error).message);
-    }
-  }, [asset]);
+  const refresh = useCallback(
+    () =>
+      api<PortViewDto>(`/api/port/${asset}`).then(
+        (v) => {
+          setView(v);
+          setLoadError(null);
+        },
+        (e: Error) => setLoadError(e.message),
+      ),
+    [asset],
+  );
 
   useEffect(() => {
     rememberPort(asset);
-    void refresh();
+    const first = setTimeout(refresh, 0);
     const t = setInterval(refresh, 30_000);
-    return () => clearInterval(t);
+    return () => {
+      clearTimeout(first);
+      clearInterval(t);
+    };
   }, [asset, refresh]);
 
   const env = view?.env ?? null;
@@ -293,7 +299,7 @@ function Deed({ snap, env, active, isOwner, busy, onDeposit, onRebalance, onTrad
           <div className="text-center md:text-right">
             <p className="eyebrow">Net asset value</p>
             <p className="num font-display text-5xl leading-none">{snap.valuation.unpriced.length ? "—" : usd(nav)}</p>
-            <p className="mt-1 text-[11px] text-ink-3">marked to executable mid · {ago(Math.floor(snap.fetchedAt / 1000))}</p>
+            <p className="mt-1 text-[11px] text-ink-3">marked to executable mid · as of {new Date(snap.fetchedAt).toLocaleTimeString()}</p>
           </div>
         </div>
       </div>
@@ -378,7 +384,8 @@ function Positions({ snap }: { snap: SnapshotDto }) {
 /* ------------------------------------------------------------- pricing */
 
 function Pricing({ snap }: { snap: SnapshotDto }) {
-  const now = Math.floor(Date.now() / 1000);
+  // Ages are shown as of the snapshot, the moment the server validated these prices.
+  const now = Math.floor(snap.fetchedAt / 1000);
   const s = snap.port.strategy;
   return (
     <section className="card p-5 sm:p-6">

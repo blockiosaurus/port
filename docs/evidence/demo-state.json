@@ -1,0 +1,17 @@
+{
+  "rpcUrl": "http://127.0.0.1:28899",
+  "cluster": "fork",
+  "asset": "8SNdAEe9LMTWprxqk5fFeydVrUetR7EbRPvbJsXcc8pf",
+  "assetSigner": "HowjyAhCriY9fUZXRMkhF3MpQVDHGQRYxwgoQTwXjB57",
+  "walletA": "ChjPBvxGjfsJ92ZsFA5vgdTL2G5Eg6jkbJNvPF8K1Kbp",
+  "walletB": "2WtrsdQM9waouZwaLjv3hjrLuJLiRs9JxCsUSp6VciXq",
+  "executive": "HNY1EcvwsKvXSG3mr4Ha3EsANYvy1dS6PpUWL4HQtAxo",
+  "signatures": {
+    "create": "4QTbX3Jh2mBtjzdhNPDmBoYfS11qbp96J4hCfW8KqD1czmWZspZmmDRYm5rx389LneGdQmcjRqsC4htuJ3Qe3dXs",
+    "deposit": "2ARf2gG2zzKXg6J3MZyqqE7MV9VFN2xmtBLz7giARzCViweVAEpN51LGV7sYYNiDZScvt2SnMQ2imBJD8ooRZwd5",
+    "delegate": "4d3nAGxvyLShU3y6PuYVNezLoSaQtrVX1W53bnLmGgEXsbz6wrvqEPqPYV21jfH4NCaQ2Gm9CT9suDtjfj2jehbj",
+    "transfer": "4jEHyohAfEcwHtwPA4FAsTcHLy8MWNEbmxEHUXWTBaEEWG26Mnty75REZ7QoBeDHkypJVcnrpEaHeT1ZaEtZXfBP",
+    "newOwnerTrade": "5ZWVYyC7Te2iVr9EGCyQFDD4N3dd2UxBSYr967b5EHewfyJtZTbnxTeAUpXEPWxPjKCtm4MJo9o2npyeDds9Hn7J"
+  },
+  "createdAt": "2026-09-22T13:57:31.067Z"
+}

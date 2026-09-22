@@ -1,10 +1,10 @@
 "use client";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { DEMO_STRATEGY } from "@port/integrations/demo";
 import { DISCLAIMER } from "@port/shared";
-import { actionCreate, faucet, rememberPort, rememberedPorts, umiFor, useEnv, useWallets } from "@/lib/client";
+import { actionCreate, faucet, rememberPort, umiFor, useEnv, useRememberedPorts, useWallets } from "@/lib/client";
 import { short, pct } from "@/lib/format";
 import { Banner, IdentityChip, IdentityLegend, Shell } from "@/components/ui";
 
@@ -12,11 +12,10 @@ export default function Home() {
   const env = useEnv();
   const { wallets, active, activeIndex, setActive } = useWallets();
   const router = useRouter();
-  const [ports, setPorts] = useState<string[]>([]);
+  const ports = useRememberedPorts();
   const [status, setStatus] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [open, setOpen] = useState("");
-  useEffect(() => setPorts(rememberedPorts()), []);
 
   async function create() {
     if (!env || !active) return;
