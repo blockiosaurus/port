@@ -396,7 +396,7 @@ function Pricing({ snap }: { snap: SnapshotDto }) {
       {snap.warnings.length > 0 && (
         <ul className="mt-3 space-y-1 text-[12px] text-fail">
           {snap.warnings.map((w) => (
-            <li key={w}>⚠ {w}</li>
+            <li key={w} className={/entitlement/.test(w) ? "text-agent" : undefined}>⚠ {w}</li>
           ))}
         </ul>
       )}
@@ -406,8 +406,8 @@ function Pricing({ snap }: { snap: SnapshotDto }) {
             <tr className="eyebrow text-left">
               <th className="pb-2 font-normal">Asset</th>
               <th className="pb-2 font-normal">Price source</th>
-              <th className="pb-2 text-right font-normal">Age</th>
-              <th className="pb-2 text-right font-normal">Half-spread</th>
+              <th className="pb-2 pl-3 text-right font-normal">Age</th>
+              <th className="pb-2 pl-3 text-right font-normal">Half-spread</th>
               <th className="pb-2 font-normal pl-4">Reference</th>
               <th className="pb-2 text-right font-normal">Deviation / band</th>
             </tr>

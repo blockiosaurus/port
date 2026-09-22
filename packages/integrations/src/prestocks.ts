@@ -30,6 +30,32 @@ const ApiRow = z.object({
 });
 export type PreStocksQuote = z.infer<typeof ApiRow>;
 
+export type PreStocksCatalog = Map<string, PreStocksQuote> & { fetchedAt?: number };
+let lastGood: { at: number; map: PreStocksCatalog } | null = null;
+
+/**
+ * Catalog with one retry and a last-good fallback of at most `maxStaleSeconds`. `fetchedAt`
+ * (unix s) is the true observation time, so the risk engine's freshness check still applies.
+ */
+export async function fetchPreStocksCatalogCached(maxStaleSeconds = 60, fetcher: typeof fetch = fetch): Promise<PreStocksCatalog> {
+  const nowS = Math.floor(Date.now() / 1000);
+  if (lastGood && nowS - lastGood.at <= 15) return lastGood.map;
+  let err: unknown;
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      const map: PreStocksCatalog = await fetchPreStocksCatalog(fetcher);
+      map.fetchedAt = Math.floor(Date.now() / 1000);
+      lastGood = { at: map.fetchedAt, map };
+      return map;
+    } catch (e) {
+      err = e;
+      await new Promise((r) => setTimeout(r, 750));
+    }
+  }
+  if (lastGood && nowS - lastGood.at <= maxStaleSeconds) return lastGood.map;
+  throw err;
+}
+
 /** Public catalog/mark API. Rows for mints outside the verified list are dropped. */
 export async function fetchPreStocksCatalog(fetcher: typeof fetch = fetch): Promise<Map<string, PreStocksQuote>> {
   const res = await fetcher("https://prestocks.com/api/prestocks", { headers: { accept: "application/json" } });

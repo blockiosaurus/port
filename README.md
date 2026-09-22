@@ -2,7 +2,7 @@
 
 **PORT is a Metaplex Core asset whose deterministic Asset Signer holds a portfolio of pre-IPO PreStocks. Every trade is signed through Core Execute, a bounded agent can run it under revocable delegation, and selling the account is one Core transfer: the stocks never move, only the ownership does.**
 
-> Demo video: _to be recorded (see [Demo script](#demo-script))_ · Evidence from the latest run: [`docs/evidence/`](docs/evidence)
+> **Demo video:** [`docs/demo/port-demo.mp4`](docs/demo/port-demo.mp4) (2:33, recorded by driving the real UI on the mainnet fork; waits for live quotes and confirmations are fast-forwarded 8×) · Evidence: [`docs/evidence/`](docs/evidence)
 
 ---
 
@@ -182,6 +182,7 @@ pnpm localnet                  # validator on :18899 with devnet builds of Core 
 pnpm test                      # 66 tests; the lifecycle suite runs when :18899 is up
 pnpm typecheck && pnpm lint && pnpm --filter @port/web build
 pnpm test:fork-trade prepare OPENAI 5 && pnpm demo:fork && pnpm test:fork-trade run   # isolated buy+sell proof
+pnpm demo:reset && pnpm demo:agent-market && pnpm demo:record   # re-record the video (with pnpm dev:fork running)
 ```
 
 ## Supported clusters and addresses

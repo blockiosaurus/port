@@ -18,10 +18,12 @@
     "demo:agent-market": "tsx --env-file-if-exists=.env scripts/launch-agent-market.ts",
     "demo": "bash scripts/demo-all.sh",
     "dev": "pnpm --filter @port/web dev",
-    "dev:fork": "RPC_URL=http://127.0.0.1:28899 PORT_CLUSTER=fork pnpm --filter @port/web dev"
+    "dev:fork": "RPC_URL=http://127.0.0.1:28899 PORT_CLUSTER=fork pnpm --filter @port/web dev",
+    "demo:record": "tsx scripts/record-demo.ts"
   },
   "devDependencies": {
     "@types/node": "^26.6.2",
+    "playwright": "1.63.0",
     "tsx": "^4.23.15",
     "typescript": "^5.9.3",
     "vitest": "^5.0.1"

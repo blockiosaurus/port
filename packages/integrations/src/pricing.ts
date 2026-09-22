@@ -1,7 +1,7 @@
 import { z } from "zod";
 import type { PortStrategy, PriceSnapshot } from "@port/shared";
 import { JupiterTradeAdapter } from "./jupiter";
-import { PRESTOCKS, fetchPreStocksCatalog, uiPriceToRawE8, type Token2022Profile } from "./prestocks";
+import { PRESTOCKS, fetchPreStocksCatalogCached, uiPriceToRawE8, type PreStocksCatalog, type Token2022Profile } from "./prestocks";
 
 export const USDC_MAINNET = "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v";
 export const PYTH_USDC_USD = "eaa020c61cc479712813461ce153894a96a6c00b21ed0cfc2798d1f9a9e9c94a";
@@ -175,9 +175,10 @@ export async function buildPriceSnapshots(strategy: PortStrategy, src: PricingSo
   }
   for (const [id, why] of src.pyth.unavailable) {
     const sym = id === PYTH_USDC_USD ? "USDC/USD" : (pre.find((x) => x.meta?.pythFeedId === id)?.t.symbol ?? id.slice(0, 8));
-    warnings.push(`Pyth ${sym} feed unavailable to this API key: ${why.replace(/^Pyth Hermes \d+: /, "").slice(0, 120)}`);
+    const gated = /pyth-indices/.test(why);
+    warnings.push(gated ? `Pyth ${sym} index needs the pyth-indices entitlement; reference falls back to the PreStocks mark.` : `Pyth ${sym} feed unavailable: ${why.replace(/^Pyth Hermes \d+: /, "").slice(0, 100)}`);
   }
-  const catalog = await fetchPreStocksCatalog().catch((e) => {
+  const catalog: PreStocksCatalog = await fetchPreStocksCatalogCached().catch((e) => {
     warnings.push(`PreStocks API unavailable: ${(e as Error).message}`);
     return new Map();
   });
@@ -221,7 +222,7 @@ export async function buildPriceSnapshots(strategy: PortStrategy, src: PricingSo
         const row = catalog.get(t.mint);
         if (row) {
           snap.referencePriceE8 = uiPriceToRawE8(row.markPrice, profile.uiMultiplierE9);
-          snap.referencePublishTime = now;
+          snap.referencePublishTime = catalog.fetchedAt ?? now;
           snap.referenceSource = !meta.pythFeedId
             ? "PreStocks mark (no Pyth feed)"
             : fallback
