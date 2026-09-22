@@ -2,7 +2,8 @@ import "server-only";
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { createNoopSigner, createSignerFromKeypair, publicKey, type Signer } from "@metaplex-foundation/umi";
-import { makeUmi } from "@port/port-sdk";
+import { ensureExecutive, makeUmi } from "@port/port-sdk";
+import { sol } from "@metaplex-foundation/umi";
 import { ActivityStore, type AgentContext } from "@port/integrations";
 
 /** Repo root (the web app runs from apps/web). Keys and demo state live there, gitignored. */
@@ -66,3 +67,26 @@ export const env = () => ({
   executive: executive()?.publicKey ?? null,
   faucet: Boolean(treasury()),
 });
+
+let executiveReady: Promise<void> | null = null;
+let executiveCheckedAt = 0;
+/**
+ * The agent must hold an MPL Agent executive profile before an owner can delegate to it.
+ * On local clusters we fund and register it on first use; on live clusters run the setup script.
+ */
+export function ensureAgentExecutive(): Promise<void> {
+  // Re-check periodically: a fork reset wipes the profile while this server keeps running.
+  if (Date.now() - executiveCheckedAt > 60_000) executiveReady = null;
+  executiveReady ??= (async () => {
+    executiveCheckedAt = Date.now();
+    const ex = executive();
+    if (!ex) return;
+    const umi = makeUmi(RPC_URL, ex);
+    if (IS_LOCAL && (await umi.rpc.getBalance(ex.publicKey)).basisPoints < 1_000_000_000n) await umi.rpc.airdrop(ex.publicKey, sol(10));
+    await ensureExecutive(umi);
+  })().catch((e) => {
+    executiveReady = null;
+    throw e;
+  });
+  return executiveReady;
+}

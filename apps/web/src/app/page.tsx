@@ -34,7 +34,17 @@ export default function Home() {
   }
 
   return (
-    <Shell env={env} wallets={wallets} activeIndex={activeIndex} setActive={setActive} onFaucet={env && active ? async () => void (await faucet(env, active)) : undefined}>
+    <Shell env={env} wallets={wallets} activeIndex={activeIndex} setActive={setActive} onFaucet={
+        env && active
+          ? async () => {
+              setError(null);
+              await faucet(env, active)
+                .then(() => setStatus(null))
+                .catch((e: Error) => setError(`Faucet: ${e.message}`));
+            }
+          : undefined
+      }
+    >
       <section className="grid gap-10 pt-12 lg:grid-cols-[1.25fr_1fr] lg:pt-20">
         <div className="rise">
           <p className="eyebrow">Stocklana · Metaplex Core Execute · PreStocks</p>

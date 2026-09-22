@@ -1,6 +1,7 @@
-import { env, json, demoState } from "@/lib/server";
+import { env, json, demoState, ensureAgentExecutive } from "@/lib/server";
 export const dynamic = "force-dynamic";
 export async function GET() {
   const state = demoState();
-  return json({ ...env(), demo: state ? { asset: state.asset, walletA: state.walletA, walletB: state.walletB } : null });
+  const agentError = await ensureAgentExecutive().then(() => null, (e: Error) => e.message);
+  return json({ ...env(), agentError, demo: state ? { asset: state.asset, walletA: state.walletA, walletB: state.walletB } : null });
 }

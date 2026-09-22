@@ -15,6 +15,8 @@ export async function POST(req: Request) {
     if (!t) throw new Error("Treasury key missing; run pnpm demo:fork:prepare");
     const { owner, usdc } = z.object({ owner: z.string(), usdc: z.number().int().min(1).max(50_000) }).parse(await req.json());
     const umi = makeUmi(RPC_URL, t);
+    // A fresh fork starts with an unfunded treasury; it pays the fees for this transfer.
+    if ((await umi.rpc.getBalance(t.publicKey)).basisPoints < 1_000_000_000n) await umi.rpc.airdrop(t.publicKey, sol(10));
     await umi.rpc.airdrop(publicKey(owner), sol(5));
     const mint = publicKey(USDC_MAINNET);
     const dest = findAssociatedTokenPda(umi, { mint, owner: publicKey(owner) })[0];
