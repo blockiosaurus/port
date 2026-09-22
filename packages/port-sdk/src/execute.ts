@@ -1,6 +1,7 @@
 import { publicKey, transactionBuilder, type Instruction, type PublicKey, type Umi } from "@metaplex-foundation/umi";
 import { execute } from "@metaplex-foundation/mpl-core";
-import { setComputeUnitLimit } from "@metaplex-foundation/mpl-toolbox";
+import { fetchAddressLookupTable, setComputeUnitLimit } from "@metaplex-foundation/mpl-toolbox";
+import type { AddressLookupTableInput } from "@metaplex-foundation/umi";
 import {
   fetchAllExecutionDelegateRecordV1,
   findExecutionDelegateRecordV1Pda,
@@ -32,7 +33,15 @@ export type GuardedExecuteInput = {
   allowedPrograms: readonly string[];
   as: ExecuteAs;
   computeUnits?: number;
+  addressLookupTables?: AddressLookupTableInput[];
 };
+
+export async function fetchLookupTables(umi: Umi, addresses: readonly string[]): Promise<AddressLookupTableInput[]> {
+  return Promise.all(addresses.map(async (a) => {
+    const t = await fetchAddressLookupTable(umi, publicKey(a));
+    return { publicKey: t.publicKey, addresses: t.addresses };
+  }));
+}
 
 /**
  * Validates inner instructions, then wraps each in Core Execute so the Asset Signer signs by CPI.
@@ -62,7 +71,8 @@ export function buildGuardedExecute(umi: Umi, input: GuardedExecuteInput) {
         instructions: input.instructions,
         ...(executionDelegateRecord ? { executionDelegateRecord } : {}),
       }),
-    );
+    )
+    .setAddressLookupTables(input.addressLookupTables ?? []);
 }
 
 export async function guardedExecute(umi: Umi, input: GuardedExecuteInput): Promise<SentTx> {

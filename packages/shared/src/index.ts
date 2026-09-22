@@ -8,6 +8,8 @@ export const TargetSchema = z.object({
   mint: base58,
   symbol: z.string().min(1).max(16),
   weightBps: z.number().int().min(0).max(BPS),
+  /** Allowed |token − reference| band; pre-IPO tokens trade at persistent premiums. */
+  maxReferenceDeviationBps: z.number().int().min(0).max(BPS).optional(),
 });
 
 export const PortStrategySchema = z
@@ -27,6 +29,7 @@ export const PortStrategySchema = z
     highVolatilityThresholdBps: z.number().int().min(1).optional(),
     maxDailyNotionalBps: z.number().int().min(1).max(BPS).optional(),
     maxSlippageBps: z.number().int().min(0).max(1_000).default(100),
+    maxTransferFeeBps: z.number().int().min(0).max(1_000).default(150),
   })
   .superRefine((s, ctx) => {
     const total = s.targets.reduce((a, t) => a + t.weightBps, 0);
@@ -100,7 +103,9 @@ export type PriceSnapshot = {
   source: string;
   /** Reference (underlying/benchmark) price in the same scale, when available. */
   referencePriceE8?: bigint;
+  referenceConfE8?: bigint;
   referencePublishTime?: number;
+  referenceSource?: string;
   /** Recent realized volatility, in bps, when available. */
   volatilityBps?: number;
   /** Market session for the reference instrument, when reliably known. */

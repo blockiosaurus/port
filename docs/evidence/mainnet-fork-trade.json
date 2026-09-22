@@ -1,0 +1,26 @@
+{
+  "asset": "35mL6WMcGucEk9yMBrg1YsqozNcDUappTu1ULfT3r3go",
+  "assetSigner": "oqSxmEbkJwvf8pgWNgpRHxyE4AiSZbYfdXHDjpqJDt3",
+  "results": [
+    {
+      "side": "buy",
+      "signature": "4T7cbv5j7iJ64fBESQB3kZ5ANzbvNT6sqhL2FiZRcgZ8GKCUsNn6FVi6vAfVQomfGhW8hhinZ5BA5hk7cDh5zoq2",
+      "route": [
+        "Manifest"
+      ],
+      "netQuoted": "2839676",
+      "minOut": "2810993",
+      "received": "2839676"
+    },
+    {
+      "side": "sell",
+      "signature": "36WS94f5h3ks6Ekg4yhsJysbMWbJPqHvstkNxTTPk25fmFXseQt5SXbhubogzMAzvW4e3vCGsrTRA3djUTqcChx3",
+      "route": [
+        "Manifest"
+      ],
+      "netQuoted": "2411643",
+      "minOut": "2387284",
+      "received": "2411643"
+    }
+  ]
+}

@@ -46,6 +46,8 @@ export type TradeQuote = {
   /** Minimum out enforced on-chain by the downstream program. */
   minOutAmount: bigint;
   slippageBps: number;
+  /** Token transfer fees already deducted from `outAmount`. */
+  transferFeeBps?: number;
   programIds: string[];
 };
 
@@ -229,22 +231,35 @@ export function evaluateTrade(ctx: TradeContext): RiskDecision {
   const p = prices.get(trade.mint);
   if (p) {
     const closed = p.marketSession === "closed";
-    const limit = closed && s.closedMarketSpreadBps !== undefined ? s.closedMarketSpreadBps : s.maxSpreadBps;
+    const target = s.targets.find((t) => t.mint === trade.mint);
+    const sessionLimit = closed && s.closedMarketSpreadBps !== undefined ? s.closedMarketSpreadBps : s.maxSpreadBps;
+    // Pre-IPO tokens trade at a persistent premium/discount to their reference mark, so the
+    // mandate sets a per-asset band; otherwise the session spread applies.
+    const limit = target?.maxReferenceDeviationBps ?? sessionLimit;
+    const session = closed ? "market closed" : p.marketSession === "open" ? "market open" : "24/7 or unknown";
     if (p.referencePriceE8 !== undefined) {
       const dev = absDiffBps(p.priceE8, p.referencePriceE8);
       add({
         code: "REFERENCE_SPREAD",
         passed: dev <= limit,
         observed: `${dev}bps`,
-        limit: `${limit}bps (${closed ? "market closed" : p.marketSession === "open" ? "market open" : "session unknown"})`,
-        message: `${trade.symbol} tokenized price vs reference.`,
+        limit: `${limit}bps (${target?.maxReferenceDeviationBps !== undefined ? "per-asset band" : session})`,
+        message: `${trade.symbol} token price vs ${p.referenceSource ?? "reference"}.`,
       });
+      if (p.referencePublishTime !== undefined) {
+        const age = now - p.referencePublishTime;
+        add({ code: "REFERENCE_FRESH", passed: age >= -5 && age <= s.maxPriceAgeSeconds, observed: `${age}s`, limit: `${s.maxPriceAgeSeconds}s`, message: `${trade.symbol} reference age from ${p.referenceSource ?? "reference"}.` });
+      }
+      if (p.referenceConfE8 !== undefined) {
+        const confBps = p.referencePriceE8 > 0n ? Number((p.referenceConfE8 * bps) / p.referencePriceE8) : Number.POSITIVE_INFINITY;
+        add({ code: "REFERENCE_CONFIDENCE", passed: confBps <= s.maxSpreadBps, observed: `${confBps}bps`, limit: `${s.maxSpreadBps}bps`, message: `${trade.symbol} reference confidence interval.` });
+      }
     } else {
       const optional = ctx.referenceOptionalMints?.includes(trade.mint) ?? false;
       add({
         code: "REFERENCE_SPREAD",
         passed: optional,
-        message: optional ? `${trade.symbol} has no public reference instrument (pre-IPO); quote-vs-oracle check applies.` : `${trade.symbol} reference price unavailable; failing closed.`,
+        message: optional ? `${trade.symbol} has no reference feed; quote-vs-oracle check applies.` : `${trade.symbol} reference price unavailable; failing closed.`,
       });
     }
     const vol = p.volatilityBps;
@@ -275,6 +290,7 @@ export function evaluateTrade(ctx: TradeContext): RiskDecision {
 
   if (quote) {
     add({ code: "QUOTE_INPUT_MATCH", passed: quote.inAmount === trade.amountIn, observed: quote.inAmount.toString(), limit: trade.amountIn.toString(), message: "Quote input equals the planned amount." });
+    add({ code: "TRANSFER_FEE", passed: (quote.transferFeeBps ?? 0) <= s.maxTransferFeeBps, observed: `${quote.transferFeeBps ?? 0}bps`, limit: `${s.maxTransferFeeBps}bps`, message: "Token-2022 transfer fee charged by the issuer." });
     add({ code: "SLIPPAGE_LIMIT", passed: quote.slippageBps <= s.maxSlippageBps && quote.minOutAmount > 0n && quote.minOutAmount <= quote.outAmount, observed: `${quote.slippageBps}bps`, limit: `${s.maxSlippageBps}bps`, message: "Quoted slippage bound enforced on-chain via minimum out." });
     const inPrice = prices.get(trade.inputMint);
     const outPrice = prices.get(trade.outputMint);
@@ -284,8 +300,9 @@ export function evaluateTrade(ctx: TradeContext): RiskDecision {
       const inUsd = valueE8(quote.inAmount, inDecimals, inPrice.priceE8);
       const minOutUsd = valueE8(quote.minOutAmount, outDecimals, outPrice.priceE8);
       const shortfall = inUsd > minOutUsd ? Number(((inUsd - minOutUsd) * bps) / (inUsd || 1n)) : 0;
-      const limit = s.maxSpreadBps + s.maxSlippageBps;
-      add({ code: "QUOTE_VS_ORACLE", passed: shortfall <= limit, observed: `${shortfall}bps`, limit: `${limit}bps`, message: "Worst-case execution value vs oracle value." });
+      const fee = quote.transferFeeBps ?? 0;
+      const limit = s.maxSpreadBps + s.maxSlippageBps + fee;
+      add({ code: "QUOTE_VS_ORACLE", passed: shortfall <= limit, observed: `${shortfall}bps`, limit: `${limit}bps${fee ? ` incl. ${fee}bps transfer fee` : ""}`, message: "Worst-case execution value vs oracle value." });
     } else {
       add({ code: "QUOTE_VS_ORACLE", passed: false, message: "Cannot compare quote to oracle; failing closed." });
     }

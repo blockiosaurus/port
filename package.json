@@ -24,6 +24,11 @@
     "@metaplex-foundation/mpl-toolbox": "^0.11.5",
     "@metaplex-foundation/umi": "^1.6.0",
     "@metaplex-foundation/umi-bundle-defaults": "^1.6.0",
+    "@noble/hashes": "1.8.0",
+    "@port/integrations": "workspace:*",
+    "@port/port-sdk": "workspace:*",
+    "@port/risk-engine": "workspace:*",
+    "@port/shared": "workspace:*",
     "@pythnetwork/hermes-client": "^3.1.0",
     "@solana/web3.js": "^1.99.0",
     "zod": "^4.6.5"

@@ -221,6 +221,26 @@ describe("evaluateTrade", () => {
     expect(failed(evaluateTrade({ ...ctx, quote: { ...ctx.quote, ...q } }))).toContain(code);
   });
 
+  it("counts transfer fees in the execution limit and caps the fee", () => {
+    const ctx = setup();
+    // 1% fee + 1% slippage: min out 9.80 on a $1000 buy stays inside spread+slippage+fee.
+    const q = { ...ctx.quote, minOutAmount: toBaseUnits("9.75", 6), transferFeeBps: 100 };
+    expect(failed(evaluateTrade({ ...ctx, quote: q }))).toEqual([]);
+    expect(failed(evaluateTrade({ ...ctx, quote: { ...q, transferFeeBps: 500 } }))).toContain("TRANSFER_FEE");
+  });
+
+  it("applies a per-asset reference band for pre-IPO premiums", () => {
+    const wide = PortStrategySchema.parse({ ...strategy, targets: strategy.targets.map((t) => (t.mint === AAA ? { ...t, maxReferenceDeviationBps: 2500 } : t)) });
+    const mut = (p: Map<string, PriceSnapshot>) => p.set(AAA, { ...p.get(AAA)!, referencePriceE8: $(85) }); // +17.6% premium
+    expect(failed(evaluateTrade(setup(mut)))).toContain("REFERENCE_SPREAD");
+    expect(failed(evaluateTrade({ ...setup(mut), strategy: wide }))).toEqual([]);
+  });
+
+  it("blocks a stale reference", () => {
+    const d = evaluateTrade(setup((p) => p.set(AAA, { ...p.get(AAA)!, referencePublishTime: NOW - 600 })));
+    expect(failed(d)).toContain("REFERENCE_FRESH");
+  });
+
   it("fails closed without a quote", () => {
     expect(failed(evaluateTrade({ ...setup(), quote: undefined }))).toContain("QUOTE_PRESENT");
   });

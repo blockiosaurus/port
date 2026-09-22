@@ -26,5 +26,7 @@ export function toPortError(e: unknown): PortError {
   const logs = err?.transactionLogs ?? err?.logs;
   if (/Neither the asset or any plugins have approved|0x1a/.test(message))
     return new PortError("NOT_AUTHORIZED", "The signer is neither the PORT owner nor an active execution delegate.", logs);
-  return new PortError("TX_FAILED", message.split("\n")[0] ?? message, logs);
+  const lines = message.split("\n").map((l) => l.trim()).filter(Boolean);
+  const detail = lines.find((l) => /^Message:|Error|failed/i.test(l) && !/^Simulation failed\.?$/.test(l)) ?? lines[0] ?? message;
+  return new PortError("TX_FAILED", detail, logs);
 }
