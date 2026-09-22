@@ -8,15 +8,17 @@
     "test": "pnpm -r test",
     "lint": "pnpm -r lint",
     "build": "pnpm -r build",
-    "demo:bootstrap": "tsx scripts/bootstrap-demo.ts",
-    "demo:verify": "tsx scripts/verify-demo.ts",
+    "demo:bootstrap": "tsx --env-file-if-exists=.env scripts/bootstrap-demo.ts",
+    "demo:verify": "tsx --env-file-if-exists=.env scripts/verify-demo.ts",
     "localnet": "scripts/localnet.sh",
-    "demo:fork:prepare": "tsx scripts/prepare-fork.ts",
+    "demo:fork:prepare": "tsx --env-file-if-exists=.env scripts/prepare-fork.ts",
     "demo:fork": "bash .demo/fork/validator.sh",
-    "test:fork-trade": "tsx scripts/fork-trade.ts",
+    "test:fork-trade": "tsx --env-file-if-exists=.env scripts/fork-trade.ts",
     "demo:reset": "bash scripts/demo-reset.sh",
-    "demo:agent-market": "tsx scripts/launch-agent-market.ts",
-    "demo": "bash scripts/demo-all.sh"
+    "demo:agent-market": "tsx --env-file-if-exists=.env scripts/launch-agent-market.ts",
+    "demo": "bash scripts/demo-all.sh",
+    "dev": "pnpm --filter @port/web dev",
+    "dev:fork": "RPC_URL=http://127.0.0.1:28899 PORT_CLUSTER=fork pnpm --filter @port/web dev"
   },
   "devDependencies": {
     "@types/node": "^26.6.2",

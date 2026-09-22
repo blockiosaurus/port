@@ -8,15 +8,28 @@ import { z } from "zod";
  *                                                              → { mintAddress, pumpUrl }
  * Auth: `Authorization: Bearer cpk_…` (dashboard API key) plus an idempotency key on launches.
  *
- * As published today, ClawPump's Solana launch path is pump.fun; its stock-paired path
- * (/api/v1/launch/pools) targets Robinhood Chain (EVM). PORT's stock-quoted Meteora DBC market is
- * therefore created by our own adapter (./meteora.ts), and this client registers/launches the
- * operator on ClawPump when a key is supplied. Nothing here runs without CLAWPUMP_API_KEY.
+ *   GET  /api/v1/pump-pairs                                    → { assets[{mint,symbol}], creatorFeeBps{min,max} }
+ *
+ * ClawPump's Solana launches go to pump.fun and can be paired with a listed asset via
+ * `pumpQuoteMint` (tokenized stocks included, e.g. NVDAx) with a 1–3% creator fee
+ * (`pumpCreatorFeeBps`). Launching creates a public mainnet token: callers must get explicit
+ * confirmation first. Nothing here runs without CLAWPUMP_API_KEY.
  */
 const AgentRes = z.object({ id: z.string(), walletAddress: z.string().nullish() }).passthrough();
 const LaunchRes = z.object({ mintAddress: z.string().nullish(), pumpUrl: z.string().nullish(), error: z.string().nullish() }).passthrough();
 
-export type ClawpumpLaunch = { name: string; symbol: string; description: string; imageUrl: string; initialBuySol?: number };
+const PumpPairs = z.object({
+  assets: z.array(z.object({ mint: z.string(), symbol: z.string(), name: z.string().optional(), decimals: z.number().optional() }).passthrough()),
+  creatorFeeBps: z.object({ min: z.number(), max: z.number(), default: z.number().optional() }).passthrough(),
+}).passthrough();
+
+export type ClawpumpLaunch = {
+  name: string; symbol: string; description: string; imageUrl: string; initialBuySol?: number;
+  /** Pair asset from /pump-pairs (e.g. NVDAx); omitted → standard SOL pair. */
+  pumpQuoteMint?: string;
+  /** Creator fee on the pump.fun pair, 100–300 bps. */
+  pumpCreatorFeeBps?: number;
+};
 
 export class ClawpumpClient {
   constructor(
@@ -41,14 +54,26 @@ export class ClawpumpClient {
     return schema.parse(data);
   }
 
+  async pumpPairs() {
+    if (!this.apiKey) throw new Error("CLAWPUMP_API_KEY is not set (dashboard key, cpk_…)");
+    const res = await this.fetcher(`${this.baseUrl}/api/v1/pump-pairs`, { headers: { authorization: `Bearer ${this.apiKey}` } });
+    if (!res.ok) throw new Error(`ClawPump pump-pairs ${res.status}`);
+    return PumpPairs.parse(await res.json());
+  }
+
   /** Registers the operator as a ClawPump agent; `monitor-exit` grants no trading skills. */
   createAgent(name: string, strategy: "monitor-exit" | "defi-yield" = "monitor-exit") {
     return this.post("/api/v1/agents", { name, strategy }, AgentRes);
   }
 
-  launchSolana(agentId: string, l: ClawpumpLaunch) {
+  async launchSolana(agentId: string, l: ClawpumpLaunch) {
     const body: Record<string, unknown> = { agentId, name: l.name, symbol: l.symbol, description: l.description, image_url: l.imageUrl };
     if (l.initialBuySol) body.initialBuySol = l.initialBuySol;
+    if (l.pumpQuoteMint) body.pumpQuoteMint = l.pumpQuoteMint;
+    if (l.pumpCreatorFeeBps !== undefined) {
+      if (l.pumpCreatorFeeBps < 100 || l.pumpCreatorFeeBps > 300) throw new Error("pumpCreatorFeeBps must be 100–300");
+      body.pumpCreatorFeeBps = l.pumpCreatorFeeBps;
+    }
     return this.post("/api/v1/launch", body, LaunchRes, true);
   }
 }

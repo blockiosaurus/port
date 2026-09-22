@@ -18,9 +18,9 @@ import { createPort, delegateExecution, depositToPort, ensureExecutive, makeUmi,
 import {
   ActivityStore, DEMO_PORT_NAME, DEMO_STRATEGY, executeEvaluated, executeRebalance, loadSnapshot, proposeTrade, USDC_MAINNET, type AgentContext,
 } from "@port/integrations";
-import { FORK_RPC, waitForRpc } from "./lib/fork";
+import { assertLocalRpc, FORK_RPC, waitForRpc } from "./lib/fork";
 
-const RPC = process.env.RPC_URL ?? FORK_RPC;
+const RPC = assertLocalRpc(process.env.FORK_RPC_URL ?? FORK_RPC);
 const DEPOSIT_USDC = BigInt(process.env.DEMO_DEPOSIT_USDC ?? "2500") * 1_000_000n;
 const activity = new ActivityStore(".demo/activity.json");
 

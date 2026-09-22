@@ -8,7 +8,7 @@ import { fetchPort, fetchPortBalances, findPortSigner, listDelegates, makeUmi } 
 import { fromBaseUnits } from "@port/shared";
 
 const state = JSON.parse(await readFile(".demo/state.json", "utf8"));
-const umi = makeUmi(process.env.RPC_URL ?? state.rpcUrl);
+const umi = makeUmi(process.env.VERIFY_RPC_URL ?? state.rpcUrl);
 let failures = 0;
 const check = (ok: boolean, label: string, detail = "") => {
   console.log(`${ok ? "✓" : "✗"} ${label}${detail ? ` — ${detail}` : ""}`);
@@ -17,7 +17,7 @@ const check = (ok: boolean, label: string, detail = "") => {
 
 const port = await fetchPort(umi, publicKey(state.asset));
 check(port.signer === state.assetSigner, "Asset Signer matches recorded address", port.signer);
-check(findPortSigner(makeUmi(process.env.RPC_URL ?? state.rpcUrl), port.asset) === port.signer, "Asset Signer derivation is deterministic");
+check(findPortSigner(makeUmi(process.env.VERIFY_RPC_URL ?? state.rpcUrl), port.asset) === port.signer, "Asset Signer derivation is deterministic");
 check(port.owner === state.walletB, "Current owner is Wallet B", port.owner);
 check(port.updateAuthority === "None", "Update authority renounced (creator keeps no control)");
 check(port.agentIdentity !== null, "MPL Agent identity registered");
@@ -35,7 +35,7 @@ for (const [label, sig] of Object.entries(state.signatures as Record<string, str
     check(false, `signature ${label}`, "missing");
     continue;
   }
-  const tx = await fetch(process.env.RPC_URL ?? state.rpcUrl, {
+  const tx = await fetch(process.env.VERIFY_RPC_URL ?? state.rpcUrl, {
     method: "POST", headers: { "content-type": "application/json" },
     body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "getTransaction", params: [sig, { maxSupportedTransactionVersion: 0, commitment: "confirmed" }] }),
   }).then((r) => r.json() as Promise<{ result: { meta: { err: unknown } } | null }>);

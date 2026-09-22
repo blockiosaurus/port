@@ -12,9 +12,9 @@ import { fetchAddressLookupTable, setComputeUnitLimit } from "@metaplex-foundati
 import { makeUmi, send } from "@port/port-sdk";
 import { AGENT_MARKET_DESIGN, buyAgentToken, createAgentMarket, readAgentMarket } from "@port/integrations";
 import { DISCLAIMER } from "@port/shared";
-import { FORK_RPC, waitForRpc } from "./lib/fork";
+import { assertLocalRpc, FORK_RPC, waitForRpc } from "./lib/fork";
 
-const RPC = process.env.RPC_URL ?? FORK_RPC;
+const RPC = assertLocalRpc(process.env.FORK_RPC_URL ?? FORK_RPC);
 await waitForRpc(RPC, 30_000);
 const secret = async (name: string) => new Uint8Array(JSON.parse(await readFile(`.keys/${name}.json`, "utf8")));
 const treasuryKp = Keypair.fromSecretKey(await secret("treasury"));

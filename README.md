@@ -107,8 +107,8 @@ In thin books the agent halves a trade and re-quotes (up to three times) when ma
 | **Main** | Portable Core-owned account | New on-chain ownership primitive: Asset Signer custody, Core Execute, MPL Agent delegation, transfer | ✅ Proven on real programs (localnet with devnet builds; mainnet fork) |
 | **PreStocks** | OPENAI, ANTHROPIC, SPACEX, ANDURIL held and traded by the Asset Signer | The investable private-market portfolio | ✅ Real Jupiter → Manifest / Meteora DLMM routes into the live PreStocks pools, executed through Core Execute on a mainnet fork. **Not yet run on mainnet** (needs funds). |
 | **Meteora** | NVDAx-quoted Dynamic Bonding Curve for the agent token (PORTA) | A market for the operator, priced in a tokenized stock; fees accrue in NVDAx | ✅ Real DBC program on a mainnet fork: config + pool + buy |
-| **Clawpump** | Operator registration and token launch | Tokenized autonomous operator | ⚠️ Client implemented from the official CLI's endpoints; needs a `cpk_` API key. ClawPump's published Solana path is pump.fun, so the stock-paired Meteora leg comes from PORT's own DBC adapter. |
-| Pyth (not a submitted track) | Execution risk gate | Prices directly permit or block trades | ✅ Implemented; Hermes now **requires an API key**. Without one, live mode fails closed. |
+| **Clawpump** | Operator registration and a stock-paired token launch (pump.fun pair via `pumpQuoteMint`, e.g. NVDAx; 1–3% creator fee) | Tokenized autonomous operator | ⚠️ Client implemented from the official CLI and docs; the API key is verified (`/pump-pairs` lists 170 assets including NVDAx and SpaceX). **No launch executed:** it creates a public mainnet token and needs explicit approval. The Meteora leg is PORT's own DBC adapter. |
+| Pyth (not a submitted track) | Execution risk gate | Prices directly permit or block trades | ✅ Live with an API key: Pyth USDC/USD gates every trade. The OpenAI/Anthropic index feeds need the gated `pyth-indices` entitlement; without it the reference falls back to the PreStocks mark, labeled "Pyth index not entitled". |
 
 Notes on the choices:
 - **xAI and Databricks are not issued by PreStocks.** SpaceX and Anduril take their slots. No Tessera or other pre-IPO tokens are used.
@@ -150,7 +150,7 @@ cp .env.example .env            # optional keys: PYTH_API_KEY, JUPITER_API_KEY, 
 ## One-command demo (mainnet fork, no real funds)
 
 ```bash
-DEV_PRICE_FALLBACK=1 pnpm demo      # or set PYTH_API_KEY instead of the fallback
+pnpm demo      # uses PYTH_API_KEY from .env; DEV_PRICE_FALLBACK=1 only if you have no key
 ```
 
 `pnpm demo` runs these steps:
@@ -159,11 +159,13 @@ DEV_PRICE_FALLBACK=1 pnpm demo      # or set PYTH_API_KEY instead of the fallbac
 3. **`demo:agent-market`** has the operator launch the NVDAx-quoted Meteora DBC market; a buyer buys.
 4. **`demo:verify`** is a read-only check of ownership, deterministic signer, custody by the Asset Signer, renounced update authority, agent identity, and every recorded signature.
 
-Then open the dashboard:
+Then open the dashboard against the fork:
 
 ```bash
-pnpm --filter @port/web dev           # http://localhost:3100
+pnpm dev:fork                         # http://localhost:3100 (pnpm dev follows .env, e.g. mainnet)
 ```
+
+Configuration comes from the repo-root `.env`; shell variables override it. Demo scripts refuse to run against anything but a local validator (`FORK_RPC_URL`), whatever `RPC_URL` says. On live clusters the server never auto-registers or funds the agent executive.
 
 For the **live UI demo**, run `pnpm demo:reset` first (not the scripted bootstrap). Jupiter quotes mainnet pools, but trades move the cloned pools, so repeating buys in the same pool on one fork trips the on-chain min-out (correctly). In the UI:
 1. **Faucet** funds the browser wallet.
@@ -204,9 +206,9 @@ PreStocks mints are listed in `packages/integrations/src/prestocks.ts`. PORT dep
 ## Known limitations
 
 - **Fork, not mainnet.** Trading PreStocks for real needs mainnet USDC. PreStocks has no devnet. Pointing `RPC_URL` at mainnet is the only change needed, but it hasn't been exercised with real funds.
-- **Pyth needs an API key** (Hermes changed in Aug 2026). The recorded evidence run used the labeled DEV fallback. With a key, USDC/USD and the OpenAI/Anthropic indices come from Pyth, and SpaceX/Anduril references come from the PreStocks mark. The assumption that the Pyth OPENAI/ANTHROPIC index is per UI token needs checking against a live key; a mismatch would surface as a `REFERENCE_SPREAD` block, not a bad trade.
+- **Pyth index feeds are gated.** The evidence run used live Pyth USDC/USD; the OpenAI/Anthropic index feeds need the `pyth-indices` entitlement, so their references come from the PreStocks mark. The assumption that the index is quoted per UI token is unverified until that entitlement exists; a mismatch would surface as a `REFERENCE_SPREAD` block, not a bad trade.
 - **Agent-enforced policy.** The on-chain delegate can Execute any instruction. The per-trade policy (allowlists, sizes, slippage) is enforced by the agent service and the client, and min-out is enforced on-chain. A compromised agent key is bounded only by revocation. Scoped on-chain delegation would need program support that doesn't exist yet.
-- **ClawPump:** not executed (no key), and there's no published Solana→Meteora path.
+- **ClawPump:** launch not executed (public mainnet action). ClawPump pairs on pump.fun, not Meteora.
 - **Activity history** is a local JSON log. On-chain state and signatures are the source of truth.
 - **Browser wallets** are demo burners for the fork. A wallet-adapter integration for real wallets is not included.
 - **Transfer fee on exit:** every move into or out of the Asset Signer pays PreStocks' 1% fee.

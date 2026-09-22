@@ -95,3 +95,10 @@ export async function waitForRpc(url: string, timeoutMs = 180_000) {
   }
   throw new Error(`RPC ${url} not healthy after ${timeoutMs}ms`);
 }
+
+/** Demo scripts airdrop, use burner keys and a fixture treasury: refuse anything but a local ledger. */
+export function assertLocalRpc(url: string): string {
+  const host = new URL(url).hostname;
+  if (host !== "127.0.0.1" && host !== "localhost") throw new Error(`Refusing to run a fork demo script against ${host}; set FORK_RPC_URL to a local validator`);
+  return url;
+}

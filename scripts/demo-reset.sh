@@ -4,7 +4,7 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 pkill -f "solana-test-validator.*28899" 2>/dev/null || true
-npx tsx scripts/prepare-fork.ts
+npx tsx --env-file-if-exists=.env scripts/prepare-fork.ts
 rm -f .demo/activity.json .demo/state.json
 nohup bash .demo/fork/validator.sh > .demo/fork/validator.log 2>&1 &
 for _ in $(seq 1 120); do

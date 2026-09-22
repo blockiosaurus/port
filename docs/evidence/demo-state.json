@@ -1,17 +1,17 @@
 {
   "rpcUrl": "http://127.0.0.1:28899",
   "cluster": "fork",
-  "asset": "8SNdAEe9LMTWprxqk5fFeydVrUetR7EbRPvbJsXcc8pf",
-  "assetSigner": "HowjyAhCriY9fUZXRMkhF3MpQVDHGQRYxwgoQTwXjB57",
+  "asset": "EjrPDmRrdoay3HsM6648mBGxZccCnxR8yPpkZdoXSVJY",
+  "assetSigner": "6op6wUhFB1U5ZZxWvoGR1H4GJfceYMPNow56sZzKwzyn",
   "walletA": "ChjPBvxGjfsJ92ZsFA5vgdTL2G5Eg6jkbJNvPF8K1Kbp",
   "walletB": "2WtrsdQM9waouZwaLjv3hjrLuJLiRs9JxCsUSp6VciXq",
   "executive": "HNY1EcvwsKvXSG3mr4Ha3EsANYvy1dS6PpUWL4HQtAxo",
   "signatures": {
-    "create": "4QTbX3Jh2mBtjzdhNPDmBoYfS11qbp96J4hCfW8KqD1czmWZspZmmDRYm5rx389LneGdQmcjRqsC4htuJ3Qe3dXs",
-    "deposit": "2ARf2gG2zzKXg6J3MZyqqE7MV9VFN2xmtBLz7giARzCViweVAEpN51LGV7sYYNiDZScvt2SnMQ2imBJD8ooRZwd5",
-    "delegate": "4d3nAGxvyLShU3y6PuYVNezLoSaQtrVX1W53bnLmGgEXsbz6wrvqEPqPYV21jfH4NCaQ2Gm9CT9suDtjfj2jehbj",
-    "transfer": "4jEHyohAfEcwHtwPA4FAsTcHLy8MWNEbmxEHUXWTBaEEWG26Mnty75REZ7QoBeDHkypJVcnrpEaHeT1ZaEtZXfBP",
-    "newOwnerTrade": "5ZWVYyC7Te2iVr9EGCyQFDD4N3dd2UxBSYr967b5EHewfyJtZTbnxTeAUpXEPWxPjKCtm4MJo9o2npyeDds9Hn7J"
+    "create": "whLPrHm9C1wSPoBJ6LVYJEtuYYjB9gAZ4zD9KerraaW6T3RS63Zvv9ZDmpHVwqYTL5WyRoCceYzqVAbmaxVruy2",
+    "deposit": "32Z11iuWnhbJyM1hjZemwiJMqYbUsnzGxA5G1iB8NhffwacNRSfFidfqxG9YiikGpAsjXJfupYLoTmL6HedDYDqe",
+    "delegate": "4YJYhsR9fsTzgH1K9aYAhog7peqwAPKXHY5vQoVc6JJa6EPGWycjT75HkBsUbbaBAMeP9XX3P2NdeiD3Ax8cfM7c",
+    "transfer": "3AG1GqA2sqQJBh8M2iNVvbi96vXjPCV6FiiNTygRBtDzzvENKFLgd2sNHnDSZtJewzPDvbUuV2sUvoCA3CWsAnFa",
+    "newOwnerTrade": "5Ptwm5DnPiVH5FWekM3gAaU5qS6zFursXRL5Dy7fNfKNyDyRjw2WUUsfiUtxCmoNfaWUrfVvdJDYNZyvM5mTNc48"
   },
-  "createdAt": "2026-09-22T13:57:31.067Z"
+  "createdAt": "2026-09-22T14:30:58.751Z"
 }

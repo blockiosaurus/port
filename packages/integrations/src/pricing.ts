@@ -34,16 +34,31 @@ export class PythHermesClient {
     return Boolean(this.apiKey);
   }
 
-  /** Latest parsed prices. Hermes requires an API key for price updates (since 2026-08). */
+  /** Feeds the key is not entitled to (e.g. gated `pyth-indices`), with Hermes' reason. */
+  readonly unavailable = new Map<string, string>();
+
+  /**
+   * Latest parsed prices. Hermes requires an API key (since 2026-08) and rejects a whole batch
+   * if any feed is gated, so each feed is requested on its own; unentitled feeds are recorded
+   * in `unavailable` and simply absent from the result (the risk engine then fails closed).
+   */
   async latest(ids: string[]): Promise<Map<string, PythQuote>> {
     if (!this.apiKey) throw new Error("PYTH_API_KEY is not set; Pyth price updates require an API key");
+    const results = await Promise.all(ids.map((id) => this.latestBatch([id]).catch((e: Error) => (this.unavailable.set(id, e.message), new Map<string, PythQuote>()))));
+    const out = new Map<string, PythQuote>();
+    for (const r of results) for (const [k, v] of r) out.set(k, v);
+    if (out.size === 0 && this.unavailable.size) throw new Error([...this.unavailable.values()][0]);
+    return out;
+  }
+
+  private async latestBatch(ids: string[]): Promise<Map<string, PythQuote>> {
     const url = new URL(`${this.baseUrl}/v2/updates/price/latest`);
     for (const id of ids) url.searchParams.append("ids[]", id);
     url.searchParams.set("parsed", "true");
     const res = await this.fetcher(url, { headers: { authorization: `Bearer ${this.apiKey}` } });
     if (!res.ok) throw new Error(`Pyth Hermes ${res.status}: ${(await res.text()).slice(0, 160)}`);
     const body = HermesLatest.parse(await res.json());
-    const hours = await this.marketHours(ids).catch(() => new Map<string, boolean>());
+    const hours = await this.marketHoursCached(ids);
     return new Map(
       body.parsed.map((p) => [
         p.id,
@@ -57,6 +72,13 @@ export class PythHermesClient {
         },
       ]),
     );
+  }
+
+  private hoursCache: { at: number; map: Map<string, boolean> } | null = null;
+  private async marketHoursCached(ids: string[]) {
+    if (!this.hoursCache || Date.now() - this.hoursCache.at > 60_000)
+      this.hoursCache = { at: Date.now(), map: await this.marketHours(ids).catch(() => new Map<string, boolean>()) };
+    return this.hoursCache.map;
   }
 
   /** Market-hours metadata; this endpoint does not require a key. */
@@ -151,6 +173,10 @@ export async function buildPriceSnapshots(strategy: PortStrategy, src: PricingSo
   } catch (e) {
     warnings.push(`Pyth unavailable: ${(e as Error).message}`);
   }
+  for (const [id, why] of src.pyth.unavailable) {
+    const sym = id === PYTH_USDC_USD ? "USDC/USD" : (pre.find((x) => x.meta?.pythFeedId === id)?.t.symbol ?? id.slice(0, 8));
+    warnings.push(`Pyth ${sym} feed unavailable to this API key: ${why.replace(/^Pyth Hermes \d+: /, "").slice(0, 120)}`);
+  }
   const catalog = await fetchPreStocksCatalog().catch((e) => {
     warnings.push(`PreStocks API unavailable: ${(e as Error).message}`);
     return new Map();
@@ -193,10 +219,14 @@ export async function buildPriceSnapshots(strategy: PortStrategy, src: PricingSo
         snap.marketSession = feed.isOpen === undefined ? "unknown" : feed.isOpen ? "open" : "closed";
       } else {
         const row = catalog.get(t.mint);
-        if (row && (!meta.pythFeedId || fallback)) {
+        if (row) {
           snap.referencePriceE8 = uiPriceToRawE8(row.markPrice, profile.uiMultiplierE9);
           snap.referencePublishTime = now;
-          snap.referenceSource = meta.pythFeedId ? `${DEV_FALLBACK_LABEL}: PreStocks mark` : "PreStocks mark (no Pyth feed)";
+          snap.referenceSource = !meta.pythFeedId
+            ? "PreStocks mark (no Pyth feed)"
+            : fallback
+              ? `${DEV_FALLBACK_LABEL}: PreStocks mark`
+              : "PreStocks mark (Pyth index not entitled)";
         }
       }
       prices.set(t.mint, snap);

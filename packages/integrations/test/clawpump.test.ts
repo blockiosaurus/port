@@ -21,4 +21,12 @@ describe("ClawpumpClient", () => {
     expect(h.authorization).toBe("Bearer cpk_test");
     expect(h["idempotency-key"]).toMatch(/[0-9a-f-]{36}/);
   });
+  it("adds a stock pair and validates the creator fee", async () => {
+    let body: any;
+    const fetcher = (async (_: string, init: RequestInit) => ((body = JSON.parse(String(init.body))), new Response("{}"))) as unknown as typeof fetch;
+    const c = new ClawpumpClient("cpk_test", "https://clawpump.tech", fetcher);
+    await c.launchSolana("a1", { name: "n", symbol: "S", description: "d", imageUrl: "i", pumpQuoteMint: "Xsc9qvGR1efVDFGLrVsmkzv3qi45LTBjeUKSPmx9qEh", pumpCreatorFeeBps: 200 });
+    expect(body).toMatchObject({ pumpQuoteMint: "Xsc9qvGR1efVDFGLrVsmkzv3qi45LTBjeUKSPmx9qEh", pumpCreatorFeeBps: 200 });
+    await expect(c.launchSolana("a1", { name: "n", symbol: "S", description: "d", imageUrl: "i", pumpCreatorFeeBps: 500 })).rejects.toThrow(/100–300/);
+  });
 });

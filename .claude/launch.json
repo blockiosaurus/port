@@ -1,6 +1,6 @@
 {
   "version": "0.0.1",
   "configurations": [
-    { "name": "web", "runtimeExecutable": "pnpm", "runtimeArgs": ["--filter", "@port/web", "dev"], "port": 3100 }
+    { "name": "web", "runtimeExecutable": "pnpm", "runtimeArgs": ["dev:fork"], "port": 3100 }
   ]
 }

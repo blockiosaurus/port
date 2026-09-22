@@ -1,35 +1,35 @@
 [
   {
-    "id": "c62a1756-7082-4e0d-81b2-0c33b76dbe50",
-    "portAsset": "8SNdAEe9LMTWprxqk5fFeydVrUetR7EbRPvbJsXcc8pf",
+    "id": "c68d38a6-7821-4d1b-8f79-926770da6226",
+    "portAsset": "EjrPDmRrdoay3HsM6648mBGxZccCnxR8yPpkZdoXSVJY",
     "actor": "ChjPBvxGjfsJ92ZsFA5vgdTL2G5Eg6jkbJNvPF8K1Kbp",
     "authority": "owner",
     "action": "create",
-    "signature": "4QTbX3Jh2mBtjzdhNPDmBoYfS11qbp96J4hCfW8KqD1czmWZspZmmDRYm5rx389LneGdQmcjRqsC4htuJ3Qe3dXs",
+    "signature": "whLPrHm9C1wSPoBJ6LVYJEtuYYjB9gAZ4zD9KerraaW6T3RS63Zvv9ZDmpHVwqYTL5WyRoCceYzqVAbmaxVruy2",
     "status": "confirmed",
-    "timestamp": "2026-09-22T13:57:07.154Z",
+    "timestamp": "2026-09-22T14:30:32.871Z",
     "details": {
       "name": "AI Private Markets Fund #001",
-      "assetSigner": "HowjyAhCriY9fUZXRMkhF3MpQVDHGQRYxwgoQTwXjB57"
+      "assetSigner": "6op6wUhFB1U5ZZxWvoGR1H4GJfceYMPNow56sZzKwzyn"
     }
   },
   {
-    "id": "c523337f-e2ab-4139-9ffb-8de88b3951a0",
-    "portAsset": "8SNdAEe9LMTWprxqk5fFeydVrUetR7EbRPvbJsXcc8pf",
+    "id": "41252004-f600-44c4-ad7a-1164ab06de07",
+    "portAsset": "EjrPDmRrdoay3HsM6648mBGxZccCnxR8yPpkZdoXSVJY",
     "actor": "ChjPBvxGjfsJ92ZsFA5vgdTL2G5Eg6jkbJNvPF8K1Kbp",
     "authority": "owner",
     "action": "deposit",
-    "signature": "2ARf2gG2zzKXg6J3MZyqqE7MV9VFN2xmtBLz7giARzCViweVAEpN51LGV7sYYNiDZScvt2SnMQ2imBJD8ooRZwd5",
+    "signature": "32Z11iuWnhbJyM1hjZemwiJMqYbUsnzGxA5G1iB8NhffwacNRSfFidfqxG9YiikGpAsjXJfupYLoTmL6HedDYDqe",
     "status": "confirmed",
-    "timestamp": "2026-09-22T13:57:07.668Z",
+    "timestamp": "2026-09-22T14:30:33.381Z",
     "details": {
       "symbol": "USDC",
       "amount": "2500000000"
     }
   },
   {
-    "id": "178949d9-88f1-482b-b312-e98228549d0c",
-    "portAsset": "8SNdAEe9LMTWprxqk5fFeydVrUetR7EbRPvbJsXcc8pf",
+    "id": "b169add7-73cf-4757-b68d-26fae950b214",
+    "portAsset": "EjrPDmRrdoay3HsM6648mBGxZccCnxR8yPpkZdoXSVJY",
     "actor": "ChjPBvxGjfsJ92ZsFA5vgdTL2G5Eg6jkbJNvPF8K1Kbp",
     "authority": "owner",
     "action": "trade",
@@ -53,63 +53,63 @@
         {
           "code": "PRICE_FRESH",
           "passed": true,
-          "observed": "5s",
+          "observed": "6s",
           "limit": "90s",
           "message": "OPENAI price age from Jupiter bid/ask mid."
         },
         {
           "code": "PRICE_CONFIDENCE",
           "passed": true,
-          "observed": "40bps",
+          "observed": "30bps",
           "limit": "250bps",
           "message": "OPENAI oracle confidence interval."
         },
         {
           "code": "PRICE_FRESH",
           "passed": true,
-          "observed": "10s",
+          "observed": "11s",
           "limit": "90s",
-          "message": "USDC price age from DEV FALLBACK (no Pyth key): $1.00."
+          "message": "USDC price age from Pyth USDC/USD."
         },
         {
           "code": "PRICE_CONFIDENCE",
           "passed": true,
-          "observed": "0bps",
+          "observed": "2bps",
           "limit": "250bps",
           "message": "USDC oracle confidence interval."
         },
         {
           "code": "REFERENCE_SPREAD",
           "passed": true,
-          "observed": "1627bps",
+          "observed": "1566bps",
           "limit": "2500bps (per-asset band)",
-          "message": "OPENAI token price vs DEV FALLBACK (no Pyth key): PreStocks mark."
+          "message": "OPENAI token price vs PreStocks mark (Pyth index not entitled)."
         },
         {
           "code": "REFERENCE_FRESH",
           "passed": true,
-          "observed": "10s",
+          "observed": "11s",
           "limit": "90s",
-          "message": "OPENAI reference age from DEV FALLBACK (no Pyth key): PreStocks mark."
+          "message": "OPENAI reference age from PreStocks mark (Pyth index not entitled)."
         },
         {
           "code": "MAX_TRADE_SIZE",
           "passed": true,
           "observed": "$700.00",
-          "limit": "$750.00",
+          "limit": "$749.94",
           "message": "Trade notional ≤ 30% of NAV."
         },
         {
           "code": "DAILY_NOTIONAL",
           "passed": true,
           "observed": "$700.00",
-          "limit": "$2,500.00",
+          "limit": "$2,499.83",
           "message": "Rolling 24h traded notional."
         },
         {
           "code": "CASH_FLOOR",
           "passed": true,
-          "observed": "72%",
+          "observed": "71.99%",
           "limit": "5%",
           "message": "Post-trade cash weight."
         },
@@ -123,8 +123,8 @@
         {
           "code": "QUOTE_INPUT_MATCH",
           "passed": true,
-          "observed": "700000000",
-          "limit": "700000000",
+          "observed": "700047323",
+          "limit": "700047323",
           "message": "Quote input equals the planned amount."
         },
         {
@@ -144,7 +144,7 @@
         {
           "code": "QUOTE_VS_ORACLE",
           "passed": true,
-          "observed": "238bps",
+          "observed": "235bps",
           "limit": "450bps incl. 100bps transfer fee",
           "message": "Worst-case execution value vs oracle value."
         },
@@ -156,41 +156,41 @@
         }
       ]
     },
-    "signature": "UUPg4bsfhSx6S4HKrUv4kNGV2AFDpKGfpWD9zrGAHENyetKYND4i6ir3Yfhp79FGKVKqZNoYMHxPG1kswBEj6F7",
+    "signature": "3jRPPWEQA4UBB2TsLxNqUZazw32GQ3D5ZKdZPHa1CyHeMyY3BbwTLiT3cyH39wDnshKh8f3r4aEvEyAxCGxUKnt2",
     "status": "confirmed",
-    "timestamp": "2026-09-22T13:57:17.964Z",
+    "timestamp": "2026-09-22T14:30:44.216Z",
     "details": {
       "side": "buy",
       "symbol": "OPENAI",
       "notionalE8": "70000000000",
-      "amountIn": "700000000",
+      "amountIn": "700047323",
       "route": [
         "Manifest"
       ],
       "quote": {
-        "outAmount": "398414633",
-        "minOutAmount": "394430488",
+        "outAmount": "400605115",
+        "minOutAmount": "396599065",
         "transferFeeBps": 100
       }
     }
   },
   {
-    "id": "3a30fbb5-bc26-45a1-90f1-083e793926be",
-    "portAsset": "8SNdAEe9LMTWprxqk5fFeydVrUetR7EbRPvbJsXcc8pf",
+    "id": "3f43ab67-7c22-4b0a-836d-d0ebd5fec9ac",
+    "portAsset": "EjrPDmRrdoay3HsM6648mBGxZccCnxR8yPpkZdoXSVJY",
     "actor": "ChjPBvxGjfsJ92ZsFA5vgdTL2G5Eg6jkbJNvPF8K1Kbp",
     "authority": "owner",
     "action": "delegate",
-    "signature": "4d3nAGxvyLShU3y6PuYVNezLoSaQtrVX1W53bnLmGgEXsbz6wrvqEPqPYV21jfH4NCaQ2Gm9CT9suDtjfj2jehbj",
+    "signature": "4YJYhsR9fsTzgH1K9aYAhog7peqwAPKXHY5vQoVc6JJa6EPGWycjT75HkBsUbbaBAMeP9XX3P2NdeiD3Ax8cfM7c",
     "status": "confirmed",
-    "timestamp": "2026-09-22T13:57:19.345Z",
+    "timestamp": "2026-09-22T14:30:45.602Z",
     "details": {
       "executive": "HNY1EcvwsKvXSG3mr4Ha3EsANYvy1dS6PpUWL4HQtAxo",
-      "registered": "5kXpNdmwTSUUnFpsVfZJk3J7FfJhM4RVy9MNAqvyAaVPQV6itQxpXT5sEVyoqw3eocbkSjovUdXkRmbhaVdCsAdP"
+      "registered": "4KvVVyBVL6tY7evo7jvASR2cBWuP226PQjAGE1bCFZZo7PLiKHX6gCAPZ1iKTEWstcUbNKwFwurAa1t2NGHe6wYB"
     }
   },
   {
-    "id": "4abc3ebc-8f28-4452-b165-95d740735f87",
-    "portAsset": "8SNdAEe9LMTWprxqk5fFeydVrUetR7EbRPvbJsXcc8pf",
+    "id": "2e8f5bd8-62b3-4215-9a53-1c1d361a834e",
+    "portAsset": "EjrPDmRrdoay3HsM6648mBGxZccCnxR8yPpkZdoXSVJY",
     "actor": "HNY1EcvwsKvXSG3mr4Ha3EsANYvy1dS6PpUWL4HQtAxo",
     "authority": "delegate",
     "action": "trade",
@@ -214,78 +214,78 @@
         {
           "code": "PRICE_FRESH",
           "passed": true,
-          "observed": "7s",
+          "observed": "8s",
           "limit": "90s",
           "message": "ANTHROPIC price age from Jupiter bid/ask mid."
         },
         {
           "code": "PRICE_CONFIDENCE",
           "passed": true,
-          "observed": "88bps",
+          "observed": "110bps",
           "limit": "250bps",
           "message": "ANTHROPIC oracle confidence interval."
         },
         {
           "code": "PRICE_FRESH",
           "passed": true,
-          "observed": "1s",
+          "observed": "2s",
           "limit": "90s",
-          "message": "USDC price age from DEV FALLBACK (no Pyth key): $1.00."
+          "message": "USDC price age from Pyth USDC/USD."
         },
         {
           "code": "PRICE_CONFIDENCE",
           "passed": true,
-          "observed": "0bps",
+          "observed": "2bps",
           "limit": "250bps",
           "message": "USDC oracle confidence interval."
         },
         {
           "code": "REFERENCE_SPREAD",
           "passed": true,
-          "observed": "93bps",
+          "observed": "71bps",
           "limit": "2500bps (per-asset band)",
-          "message": "ANTHROPIC token price vs DEV FALLBACK (no Pyth key): PreStocks mark."
+          "message": "ANTHROPIC token price vs PreStocks mark (Pyth index not entitled)."
         },
         {
           "code": "REFERENCE_FRESH",
           "passed": true,
-          "observed": "1s",
+          "observed": "2s",
           "limit": "90s",
-          "message": "ANTHROPIC reference age from DEV FALLBACK (no Pyth key): PreStocks mark."
+          "message": "ANTHROPIC reference age from PreStocks mark (Pyth index not entitled)."
         },
         {
           "code": "MAX_TRADE_SIZE",
           "passed": true,
-          "observed": "$622.68",
-          "limit": "$747.22",
+          "observed": "$622.57",
+          "limit": "$747.08",
           "message": "Trade notional ≤ 30% of NAV."
         },
         {
           "code": "DAILY_NOTIONAL",
           "passed": true,
-          "observed": "$1,322.68",
-          "limit": "$2,490.75",
+          "observed": "$1,322.57",
+          "limit": "$2,490.28",
           "message": "Rolling 24h traded notional."
         },
         {
           "code": "CASH_FLOOR",
           "passed": true,
-          "observed": "47.26%",
+          "observed": "47.27%",
           "limit": "5%",
           "message": "Post-trade cash weight."
         },
         {
           "code": "MAX_POSITION_WEIGHT",
           "passed": true,
-          "observed": "24.99%",
+          "observed": "25%",
           "limit": "35%",
           "message": "Post-trade ANTHROPIC weight."
         },
         {
           "code": "QUOTE_INPUT_MATCH",
           "passed": true,
-          "observed": "622689732",
-          "limit": "622689732",
+          "observed": "622612221",
+          "limit": "622612221",
           "message": "Quote input equals the planned amount."
         },
         {
@@ -305,7 +305,7 @@
         {
           "code": "QUOTE_VS_ORACLE",
           "passed": true,
-          "observed": "287bps",
+          "observed": "307bps",
           "limit": "450bps incl. 100bps transfer fee",
           "message": "Worst-case execution value vs oracle value."
         },
@@ -317,31 +317,31 @@
         }
       ]
     },
-    "signature": "5dxU9RjW9qQvXMTHi8TUdQqMemBrgD1VA83BrhysELJM511VEA5q33fzuCSJMjQBnYLL5cZw5g1rop5ttZJLuzCN",
+    "signature": "4FfGuncsobM8vaxKiTtzEiDfPLQKe3PhySJbuYnXkgQfr2RFhdqgNXUG8dZ5ZkZmUPSHn3Gr2hcF6fSPbtcukYAE",
     "status": "confirmed",
-    "timestamp": "2026-09-22T13:57:27.450Z",
+    "timestamp": "2026-09-22T14:30:54.242Z",
     "details": {
       "side": "buy",
       "symbol": "ANTHROPIC",
-      "notionalE8": "62268973264",
-      "amountIn": "622689732",
+      "notionalE8": "62257168921",
+      "amountIn": "622612221",
       "route": [
         "Meteora DLMM"
       ],
       "quote": {
-        "outAmount": "586780378",
-        "minOutAmount": "580912575",
+        "outAmount": "584262140",
+        "minOutAmount": "578419519",
         "transferFeeBps": 100
       }
     }
   },
   {
-    "id": "5b1fd7c1-39c8-42f7-8c79-253149b9ae39",
-    "portAsset": "8SNdAEe9LMTWprxqk5fFeydVrUetR7EbRPvbJsXcc8pf",
+    "id": "10207e0c-432f-4c2b-bb54-2cccd589d5cb",
+    "portAsset": "EjrPDmRrdoay3HsM6648mBGxZccCnxR8yPpkZdoXSVJY",
     "actor": "HNY1EcvwsKvXSG3mr4Ha3EsANYvy1dS6PpUWL4HQtAxo",
     "authority": "delegate",
     "action": "trade",
-    "rationale": "SPACEX at 0% vs target 20% (-20%); reduced to $249.07 for market impact",
+    "rationale": "SPACEX at 0% vs target 20% (-20%); reduced to $249.02 for market impact",
     "riskDecision": {
       "allowed": true,
       "checks": [
@@ -361,7 +361,7 @@
         {
           "code": "PRICE_FRESH",
           "passed": true,
-          "observed": "11s",
+          "observed": "12s",
           "limit": "90s",
           "message": "SPACEX price age from Jupiter bid/ask mid."
         },
@@ -375,49 +375,49 @@
         {
           "code": "PRICE_FRESH",
           "passed": true,
-          "observed": "6s",
+          "observed": "7s",
           "limit": "90s",
-          "message": "USDC price age from DEV FALLBACK (no Pyth key): $1.00."
+          "message": "USDC price age from Pyth USDC/USD."
         },
         {
           "code": "PRICE_CONFIDENCE",
           "passed": true,
-          "observed": "0bps",
+          "observed": "2bps",
           "limit": "250bps",
           "message": "USDC oracle confidence interval."
         },
         {
           "code": "REFERENCE_SPREAD",
           "passed": true,
-          "observed": "2282bps",
+          "observed": "2259bps",
           "limit": "2500bps (per-asset band)",
           "message": "SPACEX token price vs PreStocks mark (no Pyth feed)."
         },
         {
           "code": "REFERENCE_FRESH",
           "passed": true,
-          "observed": "6s",
+          "observed": "7s",
           "limit": "90s",
           "message": "SPACEX reference age from PreStocks mark (no Pyth feed)."
         },
         {
           "code": "MAX_TRADE_SIZE",
           "passed": true,
-          "observed": "$249.07",
-          "limit": "$747.22",
+          "observed": "$249.02",
+          "limit": "$747.08",
           "message": "Trade notional ≤ 30% of NAV."
         },
         {
           "code": "DAILY_NOTIONAL",
           "passed": true,
-          "observed": "$1,571.76",
-          "limit": "$2,490.75",
+          "observed": "$1,571.60",
+          "limit": "$2,490.28",
           "message": "Rolling 24h traded notional."
         },
         {
           "code": "CASH_FLOOR",
           "passed": true,
-          "observed": "62.26%",
+          "observed": "62.27%",
           "limit": "5%",
           "message": "Post-trade cash weight."
         },
@@ -431,8 +431,8 @@
         {
           "code": "QUOTE_INPUT_MATCH",
           "passed": true,
-          "observed": "249075893",
-          "limit": "249075893",
+          "observed": "249044888",
+          "limit": "249044888",
           "message": "Quote input equals the planned amount."
         },
         {
@@ -452,7 +452,7 @@
         {
           "code": "QUOTE_VS_ORACLE",
           "passed": true,
-          "observed": "426bps",
+          "observed": "425bps",
           "limit": "450bps incl. 100bps transfer fee",
           "message": "Worst-case execution value vs oracle value."
         },
@@ -464,27 +464,27 @@
         }
       ]
     },
-    "signature": "552YXS9qEcW4NbTaqQR5UTnErQtLDFypgvYJaTdbEnQBwXzuYPjqa9SdnshRLh4qe7eB7TdR3T25UmMqXkEWqPWj",
+    "signature": "2zFdEodbJJv1qtzhty5snu58gRQk3J4ExDgxn527csity4L58ZojoWJ3vmAJH24E9w6sbdRNFyV9FtTA3yXMiFam",
     "status": "confirmed",
-    "timestamp": "2026-09-22T13:57:27.636Z",
+    "timestamp": "2026-09-22T14:30:54.318Z",
     "details": {
       "side": "buy",
       "symbol": "SPACEX",
-      "notionalE8": "24907589305",
-      "amountIn": "249075893",
+      "notionalE8": "24902867568",
+      "amountIn": "249044888",
       "route": [
         "Meteora DLMM"
       ],
       "quote": {
-        "outAmount": "405750632",
-        "minOutAmount": "401693127",
+        "outAmount": "405808979",
+        "minOutAmount": "401750890",
         "transferFeeBps": 100
       }
     }
   },
   {
-    "id": "007eadd7-df19-4daf-bea9-e5a71b62efe4",
-    "portAsset": "8SNdAEe9LMTWprxqk5fFeydVrUetR7EbRPvbJsXcc8pf",
+    "id": "4c18eddd-5dce-4418-9dcb-ef8bfd4e2ebc",
+    "portAsset": "EjrPDmRrdoay3HsM6648mBGxZccCnxR8yPpkZdoXSVJY",
     "actor": "HNY1EcvwsKvXSG3mr4Ha3EsANYvy1dS6PpUWL4HQtAxo",
     "authority": "delegate",
     "action": "trade",
@@ -508,63 +508,63 @@
         {
           "code": "PRICE_FRESH",
           "passed": true,
-          "observed": "12s",
+          "observed": "13s",
           "limit": "90s",
           "message": "ANDURIL price age from Jupiter bid/ask mid."
         },
         {
           "code": "PRICE_CONFIDENCE",
           "passed": true,
-          "observed": "98bps",
+          "observed": "123bps",
           "limit": "250bps",
           "message": "ANDURIL oracle confidence interval."
         },
         {
           "code": "PRICE_FRESH",
           "passed": true,
-          "observed": "8s",
+          "observed": "9s",
           "limit": "90s",
-          "message": "USDC price age from DEV FALLBACK (no Pyth key): $1.00."
+          "message": "USDC price age from Pyth USDC/USD."
         },
         {
           "code": "PRICE_CONFIDENCE",
           "passed": true,
-          "observed": "0bps",
+          "observed": "2bps",
           "limit": "250bps",
           "message": "USDC oracle confidence interval."
         },
         {
           "code": "REFERENCE_SPREAD",
           "passed": true,
-          "observed": "57bps",
+          "observed": "36bps",
           "limit": "2500bps (per-asset band)",
           "message": "ANDURIL token price vs PreStocks mark (no Pyth feed)."
         },
         {
           "code": "REFERENCE_FRESH",
           "passed": true,
-          "observed": "8s",
+          "observed": "9s",
           "limit": "90s",
           "message": "ANDURIL reference age from PreStocks mark (no Pyth feed)."
         },
         {
           "code": "MAX_TRADE_SIZE",
           "passed": true,
-          "observed": "$373.61",
-          "limit": "$747.22",
+          "observed": "$373.54",
+          "limit": "$747.08",
           "message": "Trade notional ≤ 30% of NAV."
         },
         {
           "code": "DAILY_NOTIONAL",
           "passed": true,
-          "observed": "$1,945.37",
-          "limit": "$2,490.75",
+          "observed": "$1,945.14",
+          "limit": "$2,490.28",
           "message": "Rolling 24h traded notional."
         },
         {
           "code": "CASH_FLOOR",
           "passed": true,
-          "observed": "57.26%",
+          "observed": "57.27%",
           "limit": "5%",
           "message": "Post-trade cash weight."
         },
@@ -578,8 +578,170 @@
         {
           "code": "QUOTE_INPUT_MATCH",
           "passed": true,
-          "observed": "373613839",
-          "limit": "373613839",
+          "observed": "373567332",
+          "limit": "373567332",
+          "message": "Quote input equals the planned amount."
+        },
+        {
+          "code": "TRANSFER_FEE",
+          "passed": true,
+          "observed": "100bps",
+          "limit": "150bps",
+          "message": "Token-2022 transfer fee charged by the issuer."
+        },
+        {
+          "code": "SLIPPAGE_LIMIT",
+          "passed": true,
+          "observed": "99bps",
+          "limit": "100bps",
+          "message": "Quoted slippage bound enforced on-chain via minimum out."
+        },
+        {
+          "code": "QUOTE_VS_ORACLE",
+          "passed": true,
+          "observed": "317bps",
+          "limit": "450bps incl. 100bps transfer fee",
+          "message": "Worst-case execution value vs oracle value."
+        },
+        {
+          "code": "PROGRAM_ALLOWLIST",
+          "passed": true,
+          "observed": "ok",
+          "message": "Downstream programs must be allowlisted."
+        }
+      ]
+    },
+    "signature": "4qnBXKhD2yr5m4k1whtw7zxZZeFmM8CLo2Bsaw3j49PoQ9zcJ4FMLXpM2SAWJyPXPEbTqx2VZ5MGfiQHKYWPy3D7",
+    "status": "confirmed",
+    "timestamp": "2026-09-22T14:30:54.820Z",
+    "details": {
+      "side": "buy",
+      "symbol": "ANDURIL",
+      "notionalE8": "37354301352",
+      "amountIn": "373567332",
+      "route": [
+        "Manifest"
+      ],
+      "quote": {
+        "outAmount": "2382051658",
+        "minOutAmount": "2358231142",
+        "transferFeeBps": 100
+      }
+    }
+  },
+  {
+    "id": "19a946c8-d882-4135-9c66-a58c6a7e2ad2",
+    "portAsset": "EjrPDmRrdoay3HsM6648mBGxZccCnxR8yPpkZdoXSVJY",
+    "actor": "ChjPBvxGjfsJ92ZsFA5vgdTL2G5Eg6jkbJNvPF8K1Kbp",
+    "authority": "owner",
+    "action": "transfer",
+    "signature": "3AG1GqA2sqQJBh8M2iNVvbi96vXjPCV6FiiNTygRBtDzzvENKFLgd2sNHnDSZtJewzPDvbUuV2sUvoCA3CWsAnFa",
+    "status": "confirmed",
+    "timestamp": "2026-09-22T14:30:56.277Z",
+    "details": {
+      "from": "ChjPBvxGjfsJ92ZsFA5vgdTL2G5Eg6jkbJNvPF8K1Kbp",
+      "to": "2WtrsdQM9waouZwaLjv3hjrLuJLiRs9JxCsUSp6VciXq",
+      "navE8": "246941677929"
+    }
+  },
+  {
+    "id": "caf0af2b-4407-41e7-8b41-82018d97bcf0",
+    "portAsset": "EjrPDmRrdoay3HsM6648mBGxZccCnxR8yPpkZdoXSVJY",
+    "actor": "2WtrsdQM9waouZwaLjv3hjrLuJLiRs9JxCsUSp6VciXq",
+    "authority": "owner",
+    "action": "trade",
+    "rationale": "Discretionary sell of $50 ANDURIL",
+    "riskDecision": {
+      "allowed": true,
+      "checks": [
+        {
+          "code": "MINT_ALLOWLIST",
+          "passed": true,
+          "observed": "Pres→EPjF",
+          "message": "Both legs must be strategy mints and one leg must be cash."
+        },
+        {
+          "code": "VALUATION_COMPLETE",
+          "passed": true,
+          "observed": 0,
+          "limit": 0,
+          "message": "All holdings priced."
+        },
+        {
+          "code": "PRICE_FRESH",
+          "passed": true,
+          "observed": "17s",
+          "limit": "90s",
+          "message": "ANDURIL price age from Jupiter bid/ask mid."
+        },
+        {
+          "code": "PRICE_CONFIDENCE",
+          "passed": true,
+          "observed": "123bps",
+          "limit": "250bps",
+          "message": "ANDURIL oracle confidence interval."
+        },
+        {
+          "code": "PRICE_FRESH",
+          "passed": true,
+          "observed": "2s",
+          "limit": "90s",
+          "message": "USDC price age from Pyth USDC/USD."
+        },
+        {
+          "code": "PRICE_CONFIDENCE",
+          "passed": true,
+          "observed": "1bps",
+          "limit": "250bps",
+          "message": "USDC oracle confidence interval."
+        },
+        {
+          "code": "REFERENCE_SPREAD",
+          "passed": true,
+          "observed": "36bps",
+          "limit": "2500bps (per-asset band)",
+          "message": "ANDURIL token price vs PreStocks mark (no Pyth feed)."
+        },
+        {
+          "code": "REFERENCE_FRESH",
+          "passed": true,
+          "observed": "2s",
+          "limit": "90s",
+          "message": "ANDURIL reference age from PreStocks mark (no Pyth feed)."
+        },
+        {
+          "code": "MAX_TRADE_SIZE",
+          "passed": true,
+          "observed": "$50.00",
+          "limit": "$740.82",
+          "message": "Trade notional ≤ 30% of NAV."
+        },
+        {
+          "code": "DAILY_NOTIONAL",
+          "passed": true,
+          "observed": "$1,995.14",
+          "limit": "$2,469.41",
+          "message": "Rolling 24h traded notional."
+        },
+        {
+          "code": "CASH_FLOOR",
+          "passed": true,
+          "observed": "24.48%",
+          "limit": "5%",
+          "message": "Post-trade cash weight."
+        },
+        {
+          "code": "MAX_POSITION_WEIGHT",
+          "passed": true,
+          "observed": "12.76%",
+          "limit": "35%",
+          "message": "Post-trade ANDURIL weight."
+        },
+        {
+          "code": "QUOTE_INPUT_MATCH",
+          "passed": true,
+          "observed": "326017265",
+          "limit": "326017265",
           "message": "Quote input equals the planned amount."
         },
         {
@@ -611,182 +773,20 @@
         }
       ]
     },
-    "signature": "QRGgwW6rufQbcqHNcdBVGQ4vzm1LgXz27DTzSQZ2nrfYL6WqYx5NGPYgYzjikzBrvWYnPVgqwhdFSq8bTNVhLtm",
+    "signature": "5Ptwm5DnPiVH5FWekM3gAaU5qS6zFursXRL5Dy7fNfKNyDyRjw2WUUsfiUtxCmoNfaWUrfVvdJDYNZyvM5mTNc48",
     "status": "confirmed",
-    "timestamp": "2026-09-22T13:57:28.159Z",
-    "details": {
-      "side": "buy",
-      "symbol": "ANDURIL",
-      "notionalE8": "37361383958",
-      "amountIn": "373613839",
-      "route": [
-        "Manifest"
-      ],
-      "quote": {
-        "outAmount": "2382348210",
-        "minOutAmount": "2358524729",
-        "transferFeeBps": 100
-      }
-    }
-  },
-  {
-    "id": "b2027957-c798-4075-bccd-ad11b42493d4",
-    "portAsset": "8SNdAEe9LMTWprxqk5fFeydVrUetR7EbRPvbJsXcc8pf",
-    "actor": "ChjPBvxGjfsJ92ZsFA5vgdTL2G5Eg6jkbJNvPF8K1Kbp",
-    "authority": "owner",
-    "action": "transfer",
-    "signature": "4jEHyohAfEcwHtwPA4FAsTcHLy8MWNEbmxEHUXWTBaEEWG26Mnty75REZ7QoBeDHkypJVcnrpEaHeT1ZaEtZXfBP",
-    "status": "confirmed",
-    "timestamp": "2026-09-22T13:57:29.098Z",
-    "details": {
-      "from": "ChjPBvxGjfsJ92ZsFA5vgdTL2G5Eg6jkbJNvPF8K1Kbp",
-      "to": "2WtrsdQM9waouZwaLjv3hjrLuJLiRs9JxCsUSp6VciXq",
-      "navE8": "247200497374"
-    }
-  },
-  {
-    "id": "57953de0-7141-4617-b5f8-a2d7d27fb7c3",
-    "portAsset": "8SNdAEe9LMTWprxqk5fFeydVrUetR7EbRPvbJsXcc8pf",
-    "actor": "2WtrsdQM9waouZwaLjv3hjrLuJLiRs9JxCsUSp6VciXq",
-    "authority": "owner",
-    "action": "trade",
-    "rationale": "Discretionary sell of $50 ANDURIL",
-    "riskDecision": {
-      "allowed": true,
-      "checks": [
-        {
-          "code": "MINT_ALLOWLIST",
-          "passed": true,
-          "observed": "Pres→EPjF",
-          "message": "Both legs must be strategy mints and one leg must be cash."
-        },
-        {
-          "code": "VALUATION_COMPLETE",
-          "passed": true,
-          "observed": 0,
-          "limit": 0,
-          "message": "All holdings priced."
-        },
-        {
-          "code": "PRICE_FRESH",
-          "passed": true,
-          "observed": "15s",
-          "limit": "90s",
-          "message": "ANDURIL price age from Jupiter bid/ask mid."
-        },
-        {
-          "code": "PRICE_CONFIDENCE",
-          "passed": true,
-          "observed": "98bps",
-          "limit": "250bps",
-          "message": "ANDURIL oracle confidence interval."
-        },
-        {
-          "code": "PRICE_FRESH",
-          "passed": true,
-          "observed": "1s",
-          "limit": "90s",
-          "message": "USDC price age from DEV FALLBACK (no Pyth key): $1.00."
-        },
-        {
-          "code": "PRICE_CONFIDENCE",
-          "passed": true,
-          "observed": "0bps",
-          "limit": "250bps",
-          "message": "USDC oracle confidence interval."
-        },
-        {
-          "code": "REFERENCE_SPREAD",
-          "passed": true,
-          "observed": "57bps",
-          "limit": "2500bps (per-asset band)",
-          "message": "ANDURIL token price vs PreStocks mark (no Pyth feed)."
-        },
-        {
-          "code": "REFERENCE_FRESH",
-          "passed": true,
-          "observed": "1s",
-          "limit": "90s",
-          "message": "ANDURIL reference age from PreStocks mark (no Pyth feed)."
-        },
-        {
-          "code": "MAX_TRADE_SIZE",
-          "passed": true,
-          "observed": "$50.00",
-          "limit": "$741.60",
-          "message": "Trade notional ≤ 30% of NAV."
-        },
-        {
-          "code": "DAILY_NOTIONAL",
-          "passed": true,
-          "observed": "$1,995.37",
-          "limit": "$2,472.00",
-          "message": "Rolling 24h traded notional."
-        },
-        {
-          "code": "CASH_FLOOR",
-          "passed": true,
-          "observed": "24.45%",
-          "limit": "5%",
-          "message": "Post-trade cash weight."
-        },
-        {
-          "code": "MAX_POSITION_WEIGHT",
-          "passed": true,
-          "observed": "12.79%",
-          "limit": "35%",
-          "message": "Post-trade ANDURIL weight."
-        },
-        {
-          "code": "QUOTE_INPUT_MATCH",
-          "passed": true,
-          "observed": "325217556",
-          "limit": "325217556",
-          "message": "Quote input equals the planned amount."
-        },
-        {
-          "code": "TRANSFER_FEE",
-          "passed": true,
-          "observed": "100bps",
-          "limit": "150bps",
-          "message": "Token-2022 transfer fee charged by the issuer."
-        },
-        {
-          "code": "SLIPPAGE_LIMIT",
-          "passed": true,
-          "observed": "99bps",
-          "limit": "100bps",
-          "message": "Quoted slippage bound enforced on-chain via minimum out."
-        },
-        {
-          "code": "QUOTE_VS_ORACLE",
-          "passed": true,
-          "observed": "295bps",
-          "limit": "450bps incl. 100bps transfer fee",
-          "message": "Worst-case execution value vs oracle value."
-        },
-        {
-          "code": "PROGRAM_ALLOWLIST",
-          "passed": true,
-          "observed": "ok",
-          "message": "Downstream programs must be allowlisted."
-        }
-      ]
-    },
-    "signature": "5ZWVYyC7Te2iVr9EGCyQFDD4N3dd2UxBSYr967b5EHewfyJtZTbnxTeAUpXEPWxPjKCtm4MJo9o2npyeDds9Hn7J",
-    "status": "confirmed",
-    "timestamp": "2026-09-22T13:57:30.693Z",
+    "timestamp": "2026-09-22T14:30:58.531Z",
     "details": {
       "side": "sell",
       "symbol": "ANDURIL",
       "notionalE8": "5000000000",
-      "amountIn": "325217556",
+      "amountIn": "326017265",
       "route": [
         "Manifest"
       ],
       "quote": {
-        "outAmount": "49012423",
-        "minOutAmount": "48522299",
+        "outAmount": "49021106",
+        "minOutAmount": "48530896",
         "transferFeeBps": 100
       }
     }
