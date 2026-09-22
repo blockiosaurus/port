@@ -52,7 +52,13 @@ export type TradeRequest = {
  * transfer fee consumes slippage budget. Request slippage = market tolerance + fees, and
  * report the net (post-fee) expected output to the risk engine.
  */
-export const requestedSlippageBps = (r: TradeRequest) => r.slippageBps + (r.outputTransferFeeBps ?? 0) + (r.inputTransferFeeBps ?? 0);
+export function requestedSlippageBps(r: TradeRequest): number {
+  // Fees and slippage compound: (1 − fee)(1 − slip) = 1 − (fee + slip − fee·slip). Rounding the
+  // product term up keeps the tolerated market slippage at or below `slippageBps`.
+  let keep = 10_000n;
+  for (const f of [r.inputTransferFeeBps ?? 0, r.outputTransferFeeBps ?? 0, r.slippageBps]) keep = (keep * BigInt(10_000 - f) + 9_999n) / 10_000n;
+  return 10_000 - Number(keep);
+}
 
 export type PreparedSwap = {
   quote: TradeQuote;
@@ -69,11 +75,39 @@ export type ExpectedAccounts = {
   destinationTokenAccount: string;
 };
 
+export type JupiterOptions = {
+  baseUrl?: string;
+  /**
+   * Single-pool routes: fewer accounts inside Core Execute, deterministic pools (the demo fork
+   * clones exactly these), and no intermediate tokens held by the Asset Signer.
+   */
+  onlyDirectRoutes?: boolean;
+  fetcher?: typeof fetch;
+};
+
+/** Process-wide pacing: the free Jupiter tier rate-limits aggressively. */
+let nextSlot = 0;
+async function paced(fn: () => Promise<Response>, minIntervalMs: number): Promise<Response> {
+  for (let attempt = 0; ; attempt++) {
+    const wait = Math.max(0, nextSlot - Date.now());
+    nextSlot = Math.max(Date.now(), nextSlot) + minIntervalMs;
+    if (wait) await new Promise((r) => setTimeout(r, wait));
+    const res = await fn();
+    if (res.status !== 429 || attempt >= 4) return res;
+    await new Promise((r) => setTimeout(r, 1500 * 2 ** attempt));
+  }
+}
+
 export class JupiterTradeAdapter {
-  constructor(
-    private readonly baseUrl = "https://lite-api.jup.ag/swap/v1",
-    private readonly fetcher: typeof fetch = fetch,
-  ) {}
+  private readonly apiKey = process.env.JUPITER_API_KEY;
+  private readonly baseUrl: string;
+  private readonly onlyDirectRoutes: boolean;
+  private readonly fetcher: typeof fetch;
+  constructor(opts: JupiterOptions = {}) {
+    this.baseUrl = opts.baseUrl ?? process.env.JUPITER_API_URL ?? (process.env.JUPITER_API_KEY ? "https://api.jup.ag/swap/v1" : "https://lite-api.jup.ag/swap/v1");
+    this.onlyDirectRoutes = opts.onlyDirectRoutes ?? true;
+    this.fetcher = opts.fetcher ?? fetch;
+  }
 
   /** `json` is Jupiter's untouched response; it is what gets sent back for instructions. */
   async quote(req: TradeRequest): Promise<{ quote: TradeQuote; raw: JupQuote; json: unknown }> {
@@ -85,9 +119,10 @@ export class JupiterTradeAdapter {
       slippageBps: String(requestedSlippageBps(req)),
       swapMode: "ExactIn",
       restrictIntermediateTokens: "true",
+      onlyDirectRoutes: String(this.onlyDirectRoutes),
       maxAccounts: "40",
     }).toString();
-    const res = await this.fetcher(url);
+    const res = await this.request(url);
     if (!res.ok) throw new Error(`Jupiter quote unavailable (${res.status}): ${(await res.text()).slice(0, 200)}`);
     const json: unknown = await res.json();
     const raw = JupQuoteSchema.parse(json);
@@ -98,7 +133,7 @@ export class JupiterTradeAdapter {
 
   async prepare(req: TradeRequest, expected: ExpectedAccounts): Promise<PreparedSwap> {
     const { raw, json, quote } = await this.quote(req);
-    const res = await this.fetcher(`${this.baseUrl}/swap-instructions`, {
+    const res = await this.request(`${this.baseUrl}/swap-instructions`, {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ quoteResponse: json, userPublicKey: expected.authority, wrapAndUnwrapSol: false, useSharedAccounts: false, dynamicComputeUnitLimit: false }),
@@ -107,6 +142,11 @@ export class JupiterTradeAdapter {
     const si = SwapInstructionsSchema.parse(await res.json());
     const instructions = validateSwapInstructions(si, req, raw, expected);
     return { quote, raw, instructions, addressLookupTables: si.addressLookupTableAddresses, routeLabels: raw.routePlan.map((r) => r.swapInfo.label ?? r.swapInfo.ammKey) };
+  }
+
+  private request(url: string | URL, init: RequestInit = {}) {
+    const headers = { ...(init.headers as Record<string, string>), ...(this.apiKey ? { "x-api-key": this.apiKey } : {}) };
+    return paced(() => this.fetcher(url, { ...init, headers }), this.apiKey ? 150 : 1100);
   }
 }
 

@@ -58,12 +58,27 @@ export async function send(umi: Umi, builder: TransactionBuilder): Promise<SentT
 export const findPortSigner = (umi: Pick<Umi, "eddsa" | "programs">, asset: PublicKey): PublicKey =>
   findAssetSignerPda(umi, { asset })[0];
 
+const LIMIT_KEYS = [
+  "minCashWeightBps", "rebalanceToleranceBps", "maxPositionWeightBps", "maxTradeNavBps", "maxPriceAgeSeconds", "maxSpreadBps",
+  "closedMarketSpreadBps", "highVolatilityThresholdBps", "maxDailyNotionalBps", "maxSlippageBps", "maxTransferFeeBps",
+] as const;
+
+/**
+ * Compact positional encoding so the mandate fits in a Core Attributes plugin inside one
+ * transaction: {n: name, c: cash index, t: [[mint, symbol, weightBps, refBandBps|null]], l: limits}.
+ */
 export function encodeStrategy(strategy: PortStrategy): Array<{ key: string; value: string }> {
-  const parsed = PortStrategySchema.parse(strategy);
+  const s = PortStrategySchema.parse(strategy);
+  const compact = {
+    n: s.name,
+    c: s.targets.findIndex((t) => t.mint === s.cashMint),
+    t: s.targets.map((t) => [t.mint, t.symbol, t.weightBps, t.maxReferenceDeviationBps ?? null]),
+    l: LIMIT_KEYS.map((k) => s[k] ?? null),
+  };
   return [
     { key: ATTR_KIND, value: "PORT" },
-    { key: ATTR_VERSION, value: String(parsed.version) },
-    { key: ATTR_STRATEGY, value: JSON.stringify(parsed) },
+    { key: ATTR_VERSION, value: String(s.version) },
+    { key: ATTR_STRATEGY, value: JSON.stringify(compact) },
   ];
 }
 
@@ -71,7 +86,21 @@ export function decodeStrategy(attrs: Array<{ key: string; value: string }> | un
   const kind = attrs?.find((a) => a.key === ATTR_KIND)?.value;
   const json = attrs?.find((a) => a.key === ATTR_STRATEGY)?.value;
   if (kind !== "PORT" || !json) throw new PortError("NOT_A_PORT", "Asset has no PORT strategy attributes.");
-  const parsed = PortStrategySchema.safeParse(JSON.parse(json));
+  let expanded: unknown;
+  try {
+    const c = JSON.parse(json) as { n: string; c: number; t: Array<[string, string, number, number | null]>; l: Array<number | null> };
+    const limits = Object.fromEntries(LIMIT_KEYS.map((k, i) => [k, c.l[i] ?? undefined]).filter(([, v]) => v !== undefined));
+    expanded = {
+      version: Number(attrs!.find((a) => a.key === ATTR_VERSION)?.value),
+      name: c.n,
+      cashMint: c.t[c.c]?.[0],
+      targets: c.t.map(([mint, symbol, weightBps, band]) => ({ mint, symbol, weightBps, ...(band === null ? {} : { maxReferenceDeviationBps: band }) })),
+      ...limits,
+    };
+  } catch {
+    throw new PortError("INVALID_STRATEGY", "Strategy attribute is not valid PORT encoding.");
+  }
+  const parsed = PortStrategySchema.safeParse(expanded);
   if (!parsed.success) throw new PortError("INVALID_STRATEGY", parsed.error.issues.map((i) => i.message).join("; "));
   return parsed.data;
 }
@@ -87,30 +116,42 @@ export type CreatePortInput = {
 };
 
 /**
- * Creates the PORT in one transaction:
+ * Creates the PORT (two transactions: the mandate alone nearly fills one):
  *  1. Core asset owned by the caller, with the strategy in an owner-managed Attributes plugin
  *     (so the mandate travels with ownership and only the current owner can edit it);
  *  2. MPL Agent identity registration (required for execution delegation);
  *  3. renounces update authority, so the original creator keeps no control after a sale;
  *  4. seeds the Asset Signer with SOL for token-account rent.
  */
-export async function createPort(umi: Umi, input: CreatePortInput): Promise<SentTx & { asset: PublicKey; signer: PublicKey }> {
+export async function createPort(umi: Umi, input: CreatePortInput): Promise<SentTx & { asset: PublicKey; signer: PublicKey; setupSignature: string }> {
   const asset = input.asset ?? generateSigner(umi);
   const signer = findPortSigner(umi, asset.publicKey);
-  const builder = transactionBuilder()
-    .add(
-      create(umi, {
-        asset,
-        name: input.name,
-        uri: input.uri,
-        plugins: [{ type: "Attributes", attributeList: encodeStrategy(input.strategy), authority: { type: "Owner" } }],
-      }),
-    )
-    .add(registerIdentityV1(umi, { asset: asset.publicKey, agentRegistrationUri: input.agentRegistrationUri }))
-    .add(updateV2(umi, { asset: asset.publicKey, newUpdateAuthority: { __kind: "None" }, newName: null, newUri: null }))
+  const created = await send(
+    umi,
+    create(umi, {
+      asset,
+      name: input.name,
+      uri: input.uri,
+      plugins: [{ type: "Attributes", attributeList: encodeStrategy(input.strategy), authority: { type: "Owner" } }],
+    }),
+  );
+  const setup = await completePortSetup(umi, asset.publicKey, input);
+  return { ...created, asset: asset.publicKey, signer, setupSignature: setup.signature };
+}
+
+/**
+ * Second half of creation (idempotent-safe to retry if it failed): register the MPL Agent
+ * identity, renounce update authority, and seed the Asset Signer with rent.
+ */
+export async function completePortSetup(umi: Umi, asset: PublicKey, input: Pick<CreatePortInput, "agentRegistrationUri" | "signerRentLamports">): Promise<SentTx> {
+  const signer = findPortSigner(umi, asset);
+  const identity = await safeFetchAgentIdentityV2(umi, findAgentIdentityV2Pda(umi, { asset })[0]);
+  let b = transactionBuilder();
+  if (!identity) b = b.add(registerIdentityV1(umi, { asset, agentRegistrationUri: input.agentRegistrationUri }));
+  b = b
+    .add(updateV2(umi, { asset, newUpdateAuthority: { __kind: "None" }, newName: null, newUri: null }))
     .add(transferSol(umi, { destination: signer, amount: { basisPoints: input.signerRentLamports ?? 50_000_000n, identifier: "SOL", decimals: 9 } }));
-  const tx = await send(umi, builder);
-  return { ...tx, asset: asset.publicKey, signer };
+  return send(umi, b);
 }
 
 export async function fetchPort(umi: Umi, asset: PublicKey): Promise<PortAccount> {

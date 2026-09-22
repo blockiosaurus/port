@@ -10,7 +10,10 @@
     "build": "pnpm -r build",
     "demo:bootstrap": "tsx scripts/bootstrap-demo.ts",
     "demo:verify": "tsx scripts/verify-demo.ts",
-    "localnet": "scripts/localnet.sh"
+    "localnet": "scripts/localnet.sh",
+    "demo:fork:prepare": "tsx scripts/prepare-fork.ts",
+    "demo:fork": "bash .demo/fork/validator.sh",
+    "test:fork-trade": "tsx scripts/fork-trade.ts"
   },
   "devDependencies": {
     "@types/node": "^26.6.2",

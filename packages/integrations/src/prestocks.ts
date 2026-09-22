@@ -24,9 +24,9 @@ const ApiRow = z.object({
   contract_address: z.string(),
   markPrice: z.number().positive(),
   tokenPrice: z.number().positive(),
-  markValuation: z.number().optional(),
-  impliedValuation: z.number().optional(),
-  supply: z.number().optional(),
+  markValuation: z.number().nullish(),
+  impliedValuation: z.number().nullish(),
+  supply: z.number().nullish(),
 });
 export type PreStocksQuote = z.infer<typeof ApiRow>;
 
@@ -34,8 +34,14 @@ export type PreStocksQuote = z.infer<typeof ApiRow>;
 export async function fetchPreStocksCatalog(fetcher: typeof fetch = fetch): Promise<Map<string, PreStocksQuote>> {
   const res = await fetcher("https://prestocks.com/api/prestocks", { headers: { accept: "application/json" } });
   if (!res.ok) throw new Error(`PreStocks API unavailable (${res.status})`);
-  const rows = z.array(ApiRow.passthrough()).parse(await res.json());
-  return new Map(rows.filter((r) => PRESTOCK_MINTS.includes(r.contract_address)).map((r) => [r.contract_address, r]));
+  const body: unknown = await res.json();
+  if (!Array.isArray(body)) throw new Error("PreStocks API returned an unexpected shape");
+  // Validate row by row: one malformed row must not take down pricing for the others.
+  const rows = body.flatMap((r) => {
+    const parsed = ApiRow.safeParse(r);
+    return parsed.success && PRESTOCK_MINTS.includes(parsed.data.contract_address) ? [parsed.data] : [];
+  });
+  return new Map(rows.map((r) => [r.contract_address, r]));
 }
 
 const MintExtensions = z.object({
