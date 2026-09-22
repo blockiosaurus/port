@@ -1,0 +1,50 @@
+{
+  "config": "12mYP3ibG8bMZ6znGdBRe5X6ce6QWQjKMVcYDcSkyWfd",
+  "pool": "HP6MHxiZtbsqCsVws9SSLndFVkFFGdZVkH5DKzTmkf6g",
+  "baseMint": "86chKKazGMKWHUEakDpABobPrdQagNA7zVABh8K6fA7s",
+  "quoteMint": "Xsc9qvGR1efVDFGLrVsmkzv3qi45LTBjeUKSPmx9qEh",
+  "feeClaimer": "HNY1EcvwsKvXSG3mr4Ha3EsANYvy1dS6PpUWL4HQtAxo",
+  "signatures": {
+    "createConfigAndPool": "2EZYzRJwFaYiCDWmn4zUkWJzfFCEruJLKdh1rXsPqhLehTuWXeTczgAkXx3bw39jKX4MH9nnUQ1pLoutnh47BABk",
+    "nvdaxAcquire": "2qX8bD65ru6E5YwMgqT7pzPTLZCkPP7RrXouqnXiFN3tGdBJyJyBTVz2EXzQc1fLPZAbQgpwV8iiA4zCDoujzM3w",
+    "firstBuy": "5BFRSG1y8LdKpRH35z4AR6iKdhsHrcUCSjoogqFeENfUwiAsQAy59G7pc1G224SjTk7JmabbSM2d1tAz9QjaqjCF"
+  },
+  "design": {
+    "name": "PORT Agent 001",
+    "symbol": "PORTA",
+    "quote": {
+      "mint": "Xsc9qvGR1efVDFGLrVsmkzv3qi45LTBjeUKSPmx9qEh",
+      "symbol": "NVDAx",
+      "decimals": 8
+    },
+    "totalSupply": 1000000000,
+    "percentageSupplyOnMigration": 20,
+    "migrationQuoteThreshold": 10,
+    "feeBps": 100,
+    "creatorTradingFeePercentage": 50,
+    "migratedPoolFeeOption": 2,
+    "rationale": {
+      "quote": "NVDAx (xStocks NVIDIA) is the quote asset: an AI-compute equity for an AI-private-markets operator. PreStocks cannot be DBC quotes (1% Token-2022 transfer fee); NVDAx carries a Meteora token badge and no fee.",
+      "curve": "Single-segment curve that sells 80% of supply before graduation and migrates the remaining 20% with the raised NVDAx, so price discovery happens in stock terms and the post-migration pool opens near the final curve price.",
+      "fee": "Flat 1% fee collected in the quote token, so the operator treasury accrues NVDA exposure rather than its own token. 50% of trading fees go to the creator (agent treasury), 50% to the partner.",
+      "graduation": "Graduates at 10 NVDAx raised into a DAMM v2 pool with a fixed 1% fee; liquidity is permanently locked (no rug path).",
+      "authority": "Immutable token metadata and mint authority: the operator cannot mint more tokens after launch."
+    }
+  },
+  "state": {
+    "pool": "HP6MHxiZtbsqCsVws9SSLndFVkFFGdZVkH5DKzTmkf6g",
+    "baseMint": "86chKKazGMKWHUEakDpABobPrdQagNA7zVABh8K6fA7s",
+    "quoteMint": "Xsc9qvGR1efVDFGLrVsmkzv3qi45LTBjeUKSPmx9qEh",
+    "quoteReserve": "49500000",
+    "baseReserve": "862081007992797",
+    "sqrtPrice": "11843383152917512",
+    "isMigrated": false,
+    "migrationQuoteThreshold": "1000000000",
+    "progressBps": 495,
+    "partnerQuoteFee": "200000",
+    "creatorQuoteFee": "200000"
+  },
+  "disclaimer": "The agent token is a market for the autonomous operator and its community. It is not equity, a fund share, a security, or a claim on the PORT portfolio or its fees. PORT is hackathon software; nothing here is investment advice.",
+  "cluster": "fork",
+  "createdAt": "2026-09-22T13:53:22.525Z"
+}

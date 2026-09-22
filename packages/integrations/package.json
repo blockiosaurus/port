@@ -18,9 +18,15 @@
     "@metaplex-foundation/mpl-toolbox": "^0.11.5",
     "@metaplex-foundation/umi": "^1.6.0",
     "@metaplex-foundation/umi-bundle-defaults": "^1.6.0",
+    "@meteora-ag/dynamic-bonding-curve-sdk": "1.5.12",
     "@noble/hashes": "1.8.0",
     "@port/port-sdk": "workspace:*",
     "@port/risk-engine": "workspace:*",
-    "@port/shared": "workspace:*"
+    "@port/shared": "workspace:*",
+    "@solana/web3.js": "^1.99.0",
+    "bn.js": "^5.2.5"
+  },
+  "devDependencies": {
+    "@types/bn.js": "^5.2.0"
   }
 }

@@ -82,6 +82,8 @@ export type JupiterOptions = {
    * clones exactly these), and no intermediate tokens held by the Asset Signer.
    */
   onlyDirectRoutes?: boolean;
+  /** Restrict to these Jupiter DEX labels (e.g. to avoid oracle-priced AMMs on a frozen fork). */
+  dexes?: string[];
   fetcher?: typeof fetch;
 };
 
@@ -102,10 +104,12 @@ export class JupiterTradeAdapter {
   private readonly apiKey = process.env.JUPITER_API_KEY;
   private readonly baseUrl: string;
   private readonly onlyDirectRoutes: boolean;
+  private readonly dexes?: string[];
   private readonly fetcher: typeof fetch;
   constructor(opts: JupiterOptions = {}) {
     this.baseUrl = opts.baseUrl ?? process.env.JUPITER_API_URL ?? (process.env.JUPITER_API_KEY ? "https://api.jup.ag/swap/v1" : "https://lite-api.jup.ag/swap/v1");
     this.onlyDirectRoutes = opts.onlyDirectRoutes ?? true;
+    this.dexes = opts.dexes;
     this.fetcher = opts.fetcher ?? fetch;
   }
 
@@ -121,6 +125,7 @@ export class JupiterTradeAdapter {
       restrictIntermediateTokens: "true",
       onlyDirectRoutes: String(this.onlyDirectRoutes),
       maxAccounts: "40",
+      ...(this.dexes ? { dexes: this.dexes.join(",") } : {}),
     }).toString();
     const res = await this.request(url);
     if (!res.ok) throw new Error(`Jupiter quote unavailable (${res.status}): ${(await res.text()).slice(0, 200)}`);

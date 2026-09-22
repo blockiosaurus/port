@@ -8,6 +8,7 @@ import {
 import type { PortViewDto, ProposalDto, SnapshotDto, TradeDto } from "@/lib/dto";
 import { ago, pct, short, units, usd } from "@/lib/format";
 import { Banner, Checks, IdentityChip, Modal, Seal, Shell, TxLink } from "@/components/ui";
+import { AgentMarket } from "@/components/AgentMarket";
 
 type Env = PortViewDto["env"];
 type TransferProof = { before: SnapshotDto; after: SnapshotDto; signature: string; from: string; to: string };
@@ -151,6 +152,8 @@ export default function Dashboard({ asset }: { asset: string }) {
           </div>
 
           <Activity activity={view.activity} env={env} snap={snap} />
+
+          <AgentMarket env={env} />
 
           <p className="mt-10 max-w-3xl text-[11px] leading-relaxed text-ink-3">{DISCLAIMER}</p>
         </>

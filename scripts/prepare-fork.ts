@@ -11,7 +11,9 @@ import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { generateSigner, publicKey, type Instruction } from "@metaplex-foundation/umi";
 import { findAssociatedTokenPda } from "@metaplex-foundation/mpl-toolbox";
 import { makeUmi, TOKEN_2022_PROGRAM, TOKEN_PROGRAM } from "@port/port-sdk";
-import { DEMO_STRATEGY, JupiterTradeAdapter, USDC_MAINNET } from "@port/integrations";
+import { DAMM_V2_PROGRAM, DBC_PROGRAM, DEMO_STRATEGY, JupiterTradeAdapter, NVDAX_MINT, USDC_MAINNET } from "@port/integrations";
+import { deriveTokenBadgeAddress } from "@meteora-ag/dynamic-bonding-curve-sdk";
+import { PublicKey } from "@solana/web3.js";
 import { collectAccounts, FORK_RPC, tokenAccountFixture, writeValidatorScript } from "./lib/fork";
 
 const KEYS = ".keys";
@@ -55,9 +57,24 @@ for (const t of DEMO_STRATEGY.targets.filter((t) => t.mint !== USDC_MAINNET)) {
   console.log(`${t.symbol}: buy ${buy.routeLabels.join("→")} | sell ${sell.routeLabels.join("→")}`);
 }
 
+// Agent market (Meteora DBC, NVDAx-quoted): the treasury acquires NVDAx through Jupiter on the fork.
+// NVDAx routes vary between quotes, so this exact route is pinned for the known treasury.
+{
+  const tAta = (mint: string, program: string) => findAssociatedTokenPda(umi, { mint: publicKey(mint), owner: publicKey(treasury), tokenProgramId: publicKey(program) })[0];
+  const pool = new JupiterTradeAdapter({ onlyDirectRoutes: false, dexes: ["Meteora DLMM", "Raydium CLMM", "Whirlpool", "Meteora DAMM v2", "Raydium CP", "Manifest"] });
+  const r = await pool.prepare({ inputMint: USDC_MAINNET, outputMint: NVDAX_MINT, amountIn: 500_000_000n, slippageBps: 150 }, { authority: treasury, sourceTokenAccount: tAta(USDC_MAINNET, TOKEN_PROGRAM), destinationTokenAccount: tAta(NVDAX_MINT, TOKEN_2022_PROGRAM) });
+  instructions.push(...r.instructions);
+  r.addressLookupTables.forEach((a) => alts.add(a));
+  routes.NVDAx = r.routeLabels;
+  await writeFile(`${DIR}/nvdax-swap.json`, JSON.stringify({ routeLabels: r.routeLabels, addressLookupTables: r.addressLookupTables, instructions: r.instructions.map((ix) => ({ programId: ix.programId, keys: ix.keys, data: Buffer.from(ix.data).toString("base64") })) }, null, 2));
+  console.log(`NVDAx: buy ${r.routeLabels.join("→")} (pinned)`);
+}
+const DBC_EXTRA = [DBC_PROGRAM, DAMM_V2_PROGRAM, "metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s", NVDAX_MINT, deriveTokenBadgeAddress(new PublicKey(NVDAX_MINT)).toBase58()];
+
+const treasuryAtaFor = (program: string) => findAssociatedTokenPda(umi, { mint: publicKey(NVDAX_MINT), owner: publicKey(treasury), tokenProgramId: publicKey(program) })[0];
 const treasuryAta = findAssociatedTokenPda(umi, { mint: publicKey(USDC_MAINNET), owner: publicKey(treasury), tokenProgramId: publicKey(TOKEN_PROGRAM) })[0];
 await writeFile(`${DIR}/treasury-usdc.json`, JSON.stringify(tokenAccountFixture(treasuryAta, USDC_MAINNET, treasury, TREASURY_USDC), null, 2));
-const cloned = await collectAccounts(instructions, [...alts], [USDC_MAINNET, ...DEMO_STRATEGY.targets.map((t) => t.mint)], [probe]);
+const cloned = await collectAccounts(instructions, [...alts], [USDC_MAINNET, ...DEMO_STRATEGY.targets.map((t) => t.mint), ...DBC_EXTRA], [probe, treasury, treasuryAtaFor(TOKEN_2022_PROGRAM)]);
 const info = await writeValidatorScript(`${DIR}/validator.sh`, `${DIR}/ledger`, cloned, [{ address: treasuryAta, file: `${DIR}/treasury-usdc.json` }]);
 await writeFile(`${DIR}/env.json`, JSON.stringify({ preparedAt: new Date().toISOString(), forkSlot: info.slot, treasury, executive, routes }, null, 2));
 console.log(`Fork ready: ${info.programs} programs, ${info.accounts} accounts, warp slot ${info.slot + 50}.`);
