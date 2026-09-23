@@ -145,9 +145,12 @@ every action. Sub-components are pure presentation.
 ## Running it
 
 ```bash
-pnpm dev:fork     # http://localhost:3100 against the local fork (recommended)
-pnpm dev          # follows .env
+pnpm quickstart   # from the repo root: fork + agent market + dashboard, one command
+pnpm dev:fork     # just the dashboard, against a fork that is already running
+pnpm dev          # follows .env (e.g. mainnet)
 ```
+
+`PORT=3200 pnpm quickstart` (or `WEB_PORT=3200`) moves the dashboard off the default port.
 
 Config comes from the repo-root `.env` (loaded in `next.config.ts`); shell variables win. See the
 root README for the fork setup, `pnpm demo`, and the demo video, which is recorded by driving this

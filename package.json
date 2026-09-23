@@ -4,6 +4,7 @@
   "type": "module",
   "packageManager": "pnpm@10.33.2",
   "scripts": {
+    "quickstart": "bash scripts/quickstart.sh",
     "typecheck": "tsc -p tsconfig.json && pnpm -r typecheck",
     "test": "pnpm -r test",
     "lint": "pnpm -r lint",
@@ -17,8 +18,8 @@
     "demo:reset": "bash scripts/demo-reset.sh",
     "demo:agent-market": "tsx --env-file-if-exists=.env scripts/launch-agent-market.ts",
     "demo": "bash scripts/demo-all.sh",
-    "dev": "pnpm --filter @port/web dev",
-    "dev:fork": "RPC_URL=http://127.0.0.1:28899 PORT_CLUSTER=fork pnpm --filter @port/web dev",
+    "dev": "PORT=${PORT:-3100} pnpm --filter @port/web dev",
+    "dev:fork": "RPC_URL=http://127.0.0.1:28899 PORT_CLUSTER=fork PORT=${PORT:-3100} pnpm --filter @port/web dev",
     "demo:record": "tsx scripts/record-demo.ts"
   },
   "devDependencies": {

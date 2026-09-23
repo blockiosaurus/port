@@ -9,6 +9,8 @@ try {
 
 const config: NextConfig = {
   devIndicators: false,
+  // Do not write AGENTS.md/CLAUDE.md into the app on dev start.
+  agentRules: false,
   transpilePackages: ["@port/shared", "@port/port-sdk", "@port/risk-engine", "@port/integrations"],
   serverExternalPackages: ["@meteora-ag/cp-amm-sdk", "@meteora-ag/dynamic-bonding-curve-sdk", "@coral-xyz/anchor"],
 };

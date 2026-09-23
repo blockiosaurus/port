@@ -129,9 +129,28 @@ Notes on the choices:
 | **Scaled UI amount** (OPENAI ×1.486, SPACEX ×5) | Prices converted to per-raw-token, with the multiplier read from the mint. Computed UI mids match PreStocks' own token prices. |
 | Issuer pause + permanent delegate | Paused mints are refused; the disclosure explains the custody risk |
 
-## Local setup
+## Quickstart
 
-Requirements: Node 22+, pnpm 10, Solana CLI 3.x (`solana-test-validator`).
+Requirements: Node 22+, pnpm 10, and the Solana CLI (`solana-test-validator`).
+
+```bash
+git clone git@github.com:blockiosaurus/port.git && cd port
+pnpm install
+pnpm quickstart
+```
+
+That checks prerequisites, writes a `.env` if there isn't one, builds a fresh fork of Solana
+mainnet on `:28899` (cloning ~640 accounts: Core, MPL Agent, Token-2022, Jupiter, the PreStocks
+pools, Meteora DBC and NVDAx), launches the agent-token market, and serves the dashboard on
+http://localhost:3100. Ctrl+C stops both. Then, in the browser: **Faucet → Create PORT → Deposit →
+Trade → Delegate → Run agent → Transfer PORT → connect as Wallet B → trade → Revoke.**
+
+`pnpm quickstart --reset` rebuilds the fork (do this before a live demo: repeated buys in the same
+cloned pool eventually trip the on-chain minimum-out, which is the safety check working). Without a
+`PYTH_API_KEY` it switches on clearly labelled fallback prices; with one, live Pyth USDC/USD gates
+every trade. A private `MAINNET_RPC_URL` makes the fork build much faster than the public RPC.
+
+## Manual setup
 
 ```bash
 pnpm install
