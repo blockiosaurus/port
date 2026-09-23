@@ -80,7 +80,7 @@ export function ensureAgentExecutive(): Promise<void> {
   executiveReady ??= (async () => {
     executiveCheckedAt = Date.now();
     const ex = executive();
-    // On live clusters registration is a paid, deliberate step (scripts/register-executive.ts).
+    // On live clusters registration is a paid, deliberate step (pnpm exec:register).
     if (!ex || !IS_LOCAL) return;
     const umi = makeUmi(RPC_URL, ex);
     if (IS_LOCAL && (await umi.rpc.getBalance(ex.publicKey)).basisPoints < 1_000_000_000n) await umi.rpc.airdrop(ex.publicKey, sol(10));

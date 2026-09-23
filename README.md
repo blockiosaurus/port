@@ -204,6 +204,64 @@ pnpm test:fork-trade prepare OPENAI 5 && pnpm demo:fork && pnpm test:fork-trade 
 pnpm demo:reset && pnpm demo:agent-market && pnpm demo:record   # re-record the video (with pnpm dev:fork running)
 ```
 
+## Running on mainnet
+
+Everything in PORT is cluster-agnostic: the fork exists only so the demo costs nothing. To run for
+real, change `.env` and register the agent. Nothing here is required for the fork demo.
+
+```bash
+# .env
+RPC_URL=https://<your-mainnet-rpc>
+PORT_CLUSTER=mainnet-beta
+PYTH_API_KEY=<key>            # required: without it every trade fails closed
+DEV_PRICE_FALLBACK=0          # ignored on live clusters anyway
+JUPITER_API_KEY=<key>         # recommended: the free tier is paced and slow
+```
+
+**1. The agent executive key.** `.keys/executive.json` is the only key the server holds. It is the
+MPL Agent *executive* the owner delegates execution to; it signs delegated Core Execute and nothing
+else. It cannot transfer a PORT, change a mandate, delegate onward, or touch a PORT that has not
+delegated to it, and revoking ends its access immediately. On the fork it is generated, funded and
+registered automatically; on a live cluster the server refuses to do any of that.
+
+```bash
+pnpm exec:register            # shows the key, its balance and the cost; changes nothing
+# fund that address with ~0.01 SOL, then:
+pnpm exec:register --yes
+```
+
+Treat it like a hot wallet: it lives on the server, so keep it off shared machines, keep only fee
+SOL in it, and rotate it by generating a new key (`EXECUTIVE_KEY_NAME`) and re-registering. Owners
+delegate to whatever key the dashboard advertises.
+
+**2. A funded owner wallet.** There is no wallet-adapter integration yet, so the dashboard's owner
+is a browser burner key in `localStorage`. On mainnet you would send SOL and USDC to the address in
+the header from your own wallet. That is fine for a small demo and wrong for anything else; a real
+deployment should add wallet-adapter first. The faucet returns 403 on live clusters.
+
+**3. Costs.** Rent is deterministic; these are measured, not estimated:
+
+| One-time, per PORT | SOL |
+| --- | ---: |
+| Core asset incl. the on-chain mandate | 0.00774 |
+| MPL Agent identity | 0.00162 |
+| Execution delegate record (per delegation) | 0.00162 |
+| Token account per asset held (5 in Fund #001) | ~0.0107 |
+| SOL seeded to the Asset Signer for its own rent (`signerRentLamports`, configurable) | 0.05 |
+| **Total for the demo portfolio** | **~0.064** |
+
+Per agent (not per PORT): executive profile 0.00117 SOL. Per trade: ~0.000005 SOL in fees, plus the
+real costs the risk engine already prices in — PreStocks' 1% issuer transfer fee on every move,
+the pool's spread, and price impact. Deposits and withdrawals also pay that 1%.
+
+**4. Sizing.** Pre-IPO books are thin: the demo blocked a $2,000 SpaceX buy on market impact alone.
+Keep mainnet trades small ($20–200), and expect the agent to halve its own trades when impact is the
+only failing check.
+
+**5. What stays off.** The faucet and the agent's auto-registration are disabled on live clusters,
+and the fork demo scripts (`demo:*`) refuse to run against anything but a local validator, whatever
+`RPC_URL` says, so they can never spend real funds.
+
 ## Supported clusters and addresses
 
 | Program | Address | Used on |
@@ -214,7 +272,7 @@ pnpm demo:reset && pnpm demo:agent-market && pnpm demo:record   # re-record the 
 | Jupiter v6 | `JUP6LkbZbjS1jKKwapdHNy74zcZ3tLUZoi5QNyVTaV4` | mainnet, fork |
 | Meteora DBC | `dbcij3LWUppWqq96dh6gJWwBifmcGfLSB5D4DuSMaqN` | mainnet, fork |
 
-PreStocks mints are listed in `packages/integrations/src/prestocks.ts`. PORT deploys no program of its own. **No mainnet PORT exists yet**: every transaction in `docs/evidence/` ran on the local mainnet fork (explorer links in the app point at the fork's RPC).
+PreStocks mints are listed in `packages/integrations/src/prestocks.ts`. PORT deploys no program of its own. **No mainnet PORT exists yet**: every transaction in `docs/evidence/` ran on the local mainnet fork (explorer links in the app point at the fork's RPC). See [Running on mainnet](#running-on-mainnet) for what a live deployment needs.
 
 ## Evidence
 
