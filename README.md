@@ -54,7 +54,7 @@ packages/
   port-sdk/      createPort, fetchPort, balances, deposit, guarded Core Execute, delegation, transfer
   integrations/  Jupiter (validated routes), PreStocks, Pyth, pricing, agent orchestration,
                  Meteora DBC agent market, ClawPump client, activity store
-apps/web/        Next.js dashboard + API routes (agent key stays server-side)
+apps/web/        Next.js dashboard + API routes (agent key stays server-side) — see apps/web/README.md
 scripts/         localnet, mainnet-fork demo environment, bootstrap, verify, agent market
 ```
 
