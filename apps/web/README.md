@@ -21,7 +21,9 @@ src/
     server.ts            server-only config, key loading, agent context, JSON helpers   (never imported by the client)
     serialize.ts         PortSnapshot/EvaluatedTrade → wire DTOs (bigint → string)
     dto.ts               wire types shared by both sides
-    client.ts            API helper, burner wallets, signed actions
+    client.ts            API helper, wallet list (adapter + burners), signed actions
+    wallet.tsx           Providers (env + wallet adapter) and the Connect/Disconnect button
+    wallets-model.ts     composeWallets: which identities are listed and which is acting (tested)
     format.ts            addresses, USD, bps, token units, explorer links
 ```
 
@@ -51,10 +53,16 @@ display, Schibsted Grotesk body, JetBrains Mono for anything on-chain. Dark mode
 `.keys/executive.json` by `lib/server.ts`, which is `import "server-only"` so it cannot be pulled
 into a client bundle. The browser never sees it.
 
-**The browser holds the user's keys and nothing else.** Demo wallets are burner keypairs generated
-in the browser and stored in `localStorage` (`port.burners.v1`). They are read through
-`useSyncExternalStore`, so the server render sees an empty list and hydration stays consistent.
-They never leave the browser, and they are only appropriate for a fork/localnet demo.
+**The browser holds the user's keys and nothing else.** A real wallet connects through the Solana
+wallet adapter (`lib/wallet.tsx`: Wallet Standard auto-detects Phantom, Solflare, Backpack, …) and
+is turned into a umi `Signer` with `createSignerFromWalletAdapter`, so every action signs with it
+exactly as it would with a keypair; the wallet only signs, the app's own umi sends. On fork/localnet
+the header also offers two demo burners, keypairs generated in the browser and stored in
+`localStorage` (`port.burners.v1`). They are read through `useSyncExternalStore`, so the server
+render sees an empty list and hydration stays consistent. They never leave the browser, are hidden
+on live clusters, and `composeWallets` (`lib/wallets-model.ts`) decides which identities are listed
+and which one is acting. Note that a wallet extension simulates against its own RPC, so on the fork
+it warns that the transaction "may fail" before signing; approve and it lands on the fork.
 
 **Quoting happens on the server; signing happens in the browser.** The server holds no user
 authority, so an owner action is a two-step flow:
@@ -156,7 +164,6 @@ Config comes from the repo-root `.env` (loaded in `next.config.ts`); shell varia
 root README for the fork setup, `pnpm demo`, and the demo video, which is recorded by driving this
 UI with Playwright (`scripts/record-demo.ts`).
 
-Known gaps: no wallet-adapter integration (burners only, fork-appropriate), the activity log is a
-local JSON file, `/api/trade/prepare` can take ~30s on the free Jupiter tier because quotes are
+Known gaps: the activity log is a local JSON file, `/api/trade/prepare` can take ~30s on the free Jupiter tier because quotes are
 paced (set `JUPITER_API_KEY` to speed it up), and there is no mobile-specific layout beyond the
 responsive grid.

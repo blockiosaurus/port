@@ -14,7 +14,7 @@ type Env = PortViewDto["env"];
 type TransferProof = { before: SnapshotDto; after: SnapshotDto; signature: string; from: string; to: string };
 
 export default function Dashboard({ asset }: { asset: string }) {
-  const { wallets, active, activeIndex, setActive } = useWallets();
+  const { wallets, active, setActive } = useWallets();
   const [view, setView] = useState<PortViewDto | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
@@ -85,7 +85,7 @@ export default function Dashboard({ asset }: { asset: string }) {
     <Shell
       env={env}
       wallets={wallets}
-      activeIndex={activeIndex}
+      activeId={active?.id}
       setActive={setActive}
       onFaucet={env && active ? async () => void (await run("faucet", () => faucet(env, active), () => `Funded ${active.label} with 5 SOL + 5,000 fork USDC`)) : undefined}
     >
@@ -232,8 +232,8 @@ export default function Dashboard({ asset }: { asset: string }) {
           proof={proof}
           env={env}
           wallets={wallets}
-          onSwitch={(i) => {
-            setActive(i);
+          onSwitch={(id) => {
+            setActive(id);
             setProof(null);
           }}
           onClose={() => setProof(null)}
@@ -764,11 +764,11 @@ function TransferForm({ snap, from, suggested, busy, onSubmit }: { snap: Snapsho
   );
 }
 
-function TransferProofModal({ proof, env, wallets, onSwitch, onClose }: { proof: TransferProof; env: Env; wallets: Wallet[]; onSwitch: (i: 0 | 1) => void; onClose: () => void }) {
+function TransferProofModal({ proof, env, wallets, onSwitch, onClose }: { proof: TransferProof; env: Env; wallets: Wallet[]; onSwitch: (id: string) => void; onClose: () => void }) {
   const { before, after } = proof;
   const same = (a: string, b: string) => (a === b ? <span className="font-mono text-[11px] text-pass">✓ unchanged</span> : <span className="font-mono text-[11px] text-fail">changed</span>);
   const balancesSame = JSON.stringify(before.balances.map((b) => [b.mint, b.amount, b.tokenAccount])) === JSON.stringify(after.balances.map((b) => [b.mint, b.amount, b.tokenAccount]));
-  const nextIdx = wallets.findIndex((w) => w.signer.publicKey === proof.to);
+  const next = wallets.find((w) => w.signer.publicKey === proof.to);
   return (
     <Modal open onClose={onClose} title="Title transferred" wide>
       <div className="relative">
@@ -839,9 +839,9 @@ function TransferProofModal({ proof, env, wallets, onSwitch, onClose }: { proof:
       <p className="mt-3 font-mono text-[11px]" style={{ color: balancesSame ? "var(--pass)" : "var(--fail)" }}>
         {balancesSame ? "✓ every token account, balance and address identical" : "balances differ (a trade may have landed in between)"}
       </p>
-      {nextIdx >= 0 && (
-        <button className="btn btn-owner mt-6 w-full" onClick={() => onSwitch(nextIdx as 0 | 1)}>
-          Connect as {wallets[nextIdx]!.label} (the new owner) →
+      {next && (
+        <button className="btn btn-owner mt-6 w-full" onClick={() => onSwitch(next.id)}>
+          Connect as {next.label} (the new owner) →
         </button>
       )}
     </Modal>

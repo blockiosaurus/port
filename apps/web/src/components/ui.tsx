@@ -4,6 +4,7 @@ import { useState, type ReactNode } from "react";
 import type { RiskCheck } from "@port/shared";
 import { explorer, short } from "@/lib/format";
 import type { Wallet } from "@/lib/client";
+import { WalletButton } from "@/lib/wallet";
 
 export type IdentityKind = "wallet" | "owner" | "signer" | "agent";
 
@@ -134,15 +135,15 @@ export function Modal({ open, onClose, title, children, wide }: { open: boolean;
 export function Shell({
   env,
   wallets,
-  activeIndex,
+  activeId,
   setActive,
   onFaucet,
   children,
 }: {
   env: { cluster: string; rpcUrl: string; devPriceFallback: boolean; pythConfigured: boolean; faucet: boolean } | null;
   wallets: Wallet[];
-  activeIndex: 0 | 1;
-  setActive: (i: 0 | 1) => void;
+  activeId?: string;
+  setActive: (id: string) => void;
   onFaucet?: () => Promise<void>;
   children: ReactNode;
 }) {
@@ -163,21 +164,25 @@ export function Shell({
           >
             {clusterLabel}
           </span>
-          <div className="flex overflow-hidden rounded-full border border-rule-strong" role="tablist" aria-label="Demo wallet">
-            {wallets.map((w, i) => (
-              <button
-                key={w.label}
-                role="tab"
-                aria-selected={activeIndex === i}
-                onClick={() => setActive(i as 0 | 1)}
-                className="px-3 py-1.5 font-mono text-[11px] transition-colors"
-                style={activeIndex === i ? { background: "var(--wallet)", color: "var(--paper)" } : { color: "var(--ink-2)" }}
-                title={w.signer.publicKey}
-              >
-                {w.label.replace("Wallet ", "")} · {short(w.signer.publicKey, 3)}
-              </button>
-            ))}
-          </div>
+          {wallets.length > 0 && (
+            <div className="flex overflow-hidden rounded-full border border-rule-strong" role="tablist" aria-label="Acting wallet">
+              {wallets.map((w) => (
+                <button
+                  key={w.id}
+                  role="tab"
+                  aria-selected={activeId === w.id}
+                  onClick={() => setActive(w.id)}
+                  className="px-3 py-1.5 font-mono text-[11px] transition-colors"
+                  style={activeId === w.id ? { background: "var(--wallet)", color: "var(--paper)" } : { color: "var(--ink-2)" }}
+                  title={`${w.label}${w.kind === "burner" ? " (browser burner, fork only)" : ""}\n${w.signer.publicKey}`}
+                >
+                  {w.kind === "external" && <span aria-hidden>◉ </span>}
+                  {w.label.replace("Wallet ", "")} · {short(w.signer.publicKey, 3)}
+                </button>
+              ))}
+            </div>
+          )}
+          <WalletButton />
           {env?.faucet && onFaucet && (
             <button
               className="btn btn-ghost !py-1 !text-[12px]"

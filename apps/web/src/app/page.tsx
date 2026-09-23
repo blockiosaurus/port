@@ -10,7 +10,7 @@ import { Banner, IdentityChip, IdentityLegend, Shell } from "@/components/ui";
 
 export default function Home() {
   const env = useEnv();
-  const { wallets, active, activeIndex, setActive } = useWallets();
+  const { wallets, active, setActive } = useWallets();
   const router = useRouter();
   const ports = useRememberedPorts();
   const [status, setStatus] = useState<string | null>(null);
@@ -33,7 +33,7 @@ export default function Home() {
   }
 
   return (
-    <Shell env={env} wallets={wallets} activeIndex={activeIndex} setActive={setActive} onFaucet={
+    <Shell env={env} wallets={wallets} activeId={active?.id} setActive={setActive} onFaucet={
         env && active
           ? async () => {
               setError(null);
@@ -84,13 +84,13 @@ export default function Home() {
               <span>
                 <span className="font-mono text-ink-3">01</span> Connected as
               </span>
-              {active ? <IdentityChip kind="wallet" address={active.signer.publicKey} /> : <span className="text-ink-3">…</span>}
+              {active ? <IdentityChip kind="wallet" address={active.signer.publicKey} /> : <span className="text-[12px] text-ink-3">{env ? "header → Connect wallet" : "…"}</span>}
             </li>
             <li className="flex items-center justify-between gap-3">
               <span>
-                <span className="font-mono text-ink-3">02</span> Fund it (fork faucet)
+                <span className="font-mono text-ink-3">02</span> Fund it {env?.faucet ? "(fork faucet)" : "(SOL for rent + USDC)"}
               </span>
-              <span className="text-[12px] text-ink-3">header → Faucet</span>
+              <span className="text-[12px] text-ink-3">{env?.faucet ? "header → Faucet" : "from your wallet"}</span>
             </li>
             <li className="flex items-center justify-between gap-3">
               <span>

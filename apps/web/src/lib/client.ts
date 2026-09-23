@@ -1,7 +1,9 @@
 "use client";
-import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
-import { createSignerFromKeypair, generateSigner, publicKey, type Instruction, type Signer, type Umi } from "@metaplex-foundation/umi";
+import { useCallback, useEffect, useMemo, useSyncExternalStore } from "react";
+import { createSignerFromKeypair, generateSigner, publicKey, type Instruction, type KeypairSigner, type Umi } from "@metaplex-foundation/umi";
 import { base64 } from "@metaplex-foundation/umi/serializers";
+import { useWallet } from "@solana/wallet-adapter-react";
+import { createSignerFromWalletAdapter } from "@metaplex-foundation/umi-signer-wallet-adapters";
 import {
   createPort, delegateExecution, depositToPort, fetchLookupTables, guardedExecute, makeUmi, revokeExecution, transferPort, fetchPort,
   BASE_PROGRAM_ALLOWLIST, type SentTx,
@@ -9,6 +11,10 @@ import {
 import type { PortActivity } from "@port/shared";
 import { DEMO_PORT_NAME, DEMO_STRATEGY } from "@port/integrations/demo";
 import type { EnvDto, InstructionDto, TradeDto } from "./dto";
+import { burnerId, composeWallets, EXTERNAL_ID, type Wallet } from "./wallets-model";
+import { useEnvContext } from "./wallet";
+
+export type { Wallet } from "./wallets-model";
 
 const JUPITER = "JUP6LkbZbjS1jKKwapdHNy74zcZ3tLUZoi5QNyVTaV4";
 const USDC = "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v";
@@ -22,29 +28,27 @@ export async function api<T>(path: string, body?: unknown): Promise<T> {
   return data as T;
 }
 
-export function useEnv() {
-  const [env, setEnv] = useState<(EnvDto & { demo: { asset: string } | null }) | null>(null);
-  useEffect(() => void api<EnvDto & { demo: { asset: string } | null }>("/api/env").then(setEnv).catch(() => {}), []);
-  return env;
-}
+/** Environment, fetched once by `Providers` in lib/wallet.tsx. Null until loaded. */
+export const useEnv = useEnvContext;
 
 // --- Burner wallets ---------------------------------------------------------------------------
 // Fork/localnet demo wallets are generated and kept in this browser only; keys never touch the server.
 
-export type Wallet = { label: "Wallet A" | "Wallet B"; signer: Signer };
+type Burner = Wallet & { kind: "burner"; signer: KeypairSigner };
 const KEY = "port.burners.v1";
+const ACTIVE_KEY = "port.activeWallet";
 const LABELS = ["Wallet A", "Wallet B"] as const;
 
-function loadWallets(): Wallet[] {
+function loadBurners(): Burner[] {
   const umi = makeUmi("http://127.0.0.1:1");
   let stored: number[][] = [];
   try {
     stored = JSON.parse(localStorage.getItem(KEY) ?? "[]");
   } catch {}
-  const wallets = LABELS.map((label, i) => {
+  const wallets = LABELS.map((label, i): Burner => {
     const secret = stored[i];
     const signer = secret ? createSignerFromKeypair(umi, umi.eddsa.createKeypairFromSecretKey(new Uint8Array(secret))) : generateSigner(umi);
-    return { label, signer };
+    return { id: burnerId(i), label, kind: "burner", signer };
   });
   try {
     localStorage.setItem(KEY, JSON.stringify(wallets.map((w) => Array.from(w.signer.secretKey))));
@@ -53,32 +57,55 @@ function loadWallets(): Wallet[] {
 }
 
 // Browser-only state read through useSyncExternalStore: stable snapshots, empty on the server.
-let walletCache: Wallet[] | null = null;
-let activeCache: 0 | 1 = 0;
+let burnerCache: Burner[] | null = null;
+let activeCache: string | null = null;
 const listeners = new Set<() => void>();
-const EMPTY: Wallet[] = [];
+const EMPTY: Burner[] = [];
 const subscribe = (fn: () => void) => (listeners.add(fn), () => listeners.delete(fn));
-function walletSnapshot(): Wallet[] {
-  if (!walletCache) {
-    walletCache = loadWallets();
+function burnerSnapshot(): Burner[] {
+  if (!burnerCache) {
+    burnerCache = loadBurners();
     try {
-      activeCache = localStorage.getItem("port.activeWallet") === "1" ? 1 : 0;
+      const raw = localStorage.getItem(ACTIVE_KEY);
+      activeCache = raw === "0" || raw === "1" ? burnerId(Number(raw)) : raw; // pre-adapter versions stored an index
     } catch {}
   }
-  return walletCache;
+  return burnerCache;
+}
+function setActiveId(id: string) {
+  activeCache = id;
+  try {
+    localStorage.setItem(ACTIVE_KEY, id);
+  } catch {}
+  listeners.forEach((l) => l());
 }
 
+/**
+ * Every identity this browser can sign with: the connected Wallet Standard wallet (if any) plus,
+ * on fork/localnet only, the two burners. `active` is what the pages act as.
+ */
 export function useWallets() {
-  const wallets = useSyncExternalStore(subscribe, walletSnapshot, () => EMPTY);
-  const active = useSyncExternalStore(subscribe, () => (walletSnapshot(), activeCache), () => 0 as const);
-  const setActive = useCallback((i: 0 | 1) => {
-    activeCache = i;
-    try {
-      localStorage.setItem("port.activeWallet", String(i));
-    } catch {}
-    listeners.forEach((l) => l());
-  }, []);
-  return { wallets, active: wallets[active], activeIndex: active, setActive };
+  const env = useEnvContext();
+  const local = env?.cluster === "fork" || env?.cluster === "localnet";
+  const burners = useSyncExternalStore(subscribe, burnerSnapshot, () => EMPTY);
+  const activeId = useSyncExternalStore(subscribe, () => (burnerSnapshot(), activeCache), () => null);
+
+  const adapter = useWallet();
+  const externalKey = adapter.connected && adapter.publicKey ? adapter.publicKey.toBase58() : null;
+  const externalName = adapter.wallet?.adapter.name ?? "Wallet";
+  const external = useMemo<Wallet | null>(
+    () => (externalKey ? { id: EXTERNAL_ID, label: externalName, kind: "external", signer: createSignerFromWalletAdapter(adapter) } : null),
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- the adapter context is stable per connection; re-create only when the key changes
+    [externalKey, externalName],
+  );
+  // A wallet that just connected becomes the acting identity.
+  useEffect(() => {
+    if (externalKey) setActiveId(EXTERNAL_ID);
+  }, [externalKey]);
+
+  const { wallets, active } = useMemo(() => composeWallets({ burners, external, local, activeId }), [burners, external, local, activeId]);
+  const setActive = useCallback((id: string) => setActiveId(id), []);
+  return { wallets, active, setActive };
 }
 
 export const umiFor = (rpcUrl: string, w: Wallet) => makeUmi(rpcUrl, w.signer);

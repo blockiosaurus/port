@@ -234,10 +234,10 @@ Treat it like a hot wallet: it lives on the server, so keep it off shared machin
 SOL in it, and rotate it by generating a new key (`EXECUTIVE_KEY_NAME`) and re-registering. Owners
 delegate to whatever key the dashboard advertises.
 
-**2. A funded owner wallet.** There is no wallet-adapter integration yet, so the dashboard's owner
-is a browser burner key in `localStorage`. On mainnet you would send SOL and USDC to the address in
-the header from your own wallet. That is fine for a small demo and wrong for anything else; a real
-deployment should add wallet-adapter first. The faucet returns 403 on live clusters.
+**2. A funded owner wallet.** Connect a Wallet Standard wallet (Phantom, Solflare, Backpack, …)
+from the dashboard header; on live clusters it is the only identity offered, and the browser
+burners are hidden. It needs SOL for rent and fees and USDC to deposit. The faucet returns 403 on
+live clusters.
 
 **3. Costs.** Rent is deterministic; these are measured, not estimated:
 
@@ -288,7 +288,7 @@ PreStocks mints are listed in `packages/integrations/src/prestocks.ts`. PORT dep
 - **Agent-enforced policy.** The on-chain delegate can Execute any instruction. The per-trade policy (allowlists, sizes, slippage) is enforced by the agent service and the client, and min-out is enforced on-chain. A compromised agent key is bounded only by revocation. Scoped on-chain delegation would need program support that doesn't exist yet.
 - **ClawPump:** launch not executed (public mainnet action). ClawPump pairs on pump.fun, not Meteora.
 - **Activity history** is a local JSON log. On-chain state and signatures are the source of truth.
-- **Browser wallets** are demo burners for the fork. A wallet-adapter integration for real wallets is not included.
+- **Browser wallets:** real wallets connect through the Solana wallet adapter; the two demo burners exist only on the fork.
 - **Transfer fee on exit:** every move into or out of the Asset Signer pays PreStocks' 1% fee.
 
 ## Disclaimer

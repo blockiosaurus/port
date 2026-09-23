@@ -216,3 +216,49 @@ body {
     animation: none;
   }
 }
+
+/* Wallet-adapter modal, restyled to the deed. Only the wallet picker uses the library's markup. */
+.wallet-adapter-modal-wrapper {
+  background: var(--card);
+  color: var(--ink);
+  border: 1px solid var(--rule);
+  border-radius: 14px;
+  box-shadow: var(--shadow);
+  font-family: var(--font-sans);
+}
+.wallet-adapter-modal-title {
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: 1.9rem;
+  color: var(--ink);
+}
+.wallet-adapter-modal-button-close {
+  background: var(--paper-2);
+}
+.wallet-adapter-modal-button-close svg {
+  fill: var(--ink-2);
+}
+.wallet-adapter-modal-list .wallet-adapter-button {
+  font-family: var(--font-sans);
+  font-weight: 600;
+  color: var(--ink);
+  border-radius: 10px;
+}
+.wallet-adapter-modal-list .wallet-adapter-button:not([disabled]):hover {
+  background: var(--paper-2);
+}
+.wallet-adapter-modal-list-more {
+  color: var(--ink-2);
+}
+.wallet-adapter-modal-list-more svg {
+  fill: var(--ink-2);
+}
+.wallet-adapter-modal-middle {
+  color: var(--ink-2);
+}
+.wallet-adapter-modal-middle-button {
+  background: var(--ink);
+  color: var(--paper);
+  border-radius: 999px;
+  font-family: var(--font-sans);
+}
