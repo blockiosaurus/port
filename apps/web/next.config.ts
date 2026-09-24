@@ -12,6 +12,9 @@ const config: NextConfig = {
   // Do not write AGENTS.md/CLAUDE.md into the app on dev start.
   agentRules: false,
   transpilePackages: ["@port/shared", "@port/port-sdk", "@port/risk-engine", "@port/integrations"],
-  serverExternalPackages: ["@meteora-ag/cp-amm-sdk", "@meteora-ag/dynamic-bonding-curve-sdk", "@coral-xyz/anchor"],
+  // Everything is bundled. Leaving the Meteora SDK (and anchor) external made the serverless function
+  // require() them from node_modules at runtime, where rpc-websockets' require("uuid") hits an ESM-only
+  // package and fails with ERR_REQUIRE_ESM on Vercel.
+  serverExternalPackages: [],
 };
 export default config;

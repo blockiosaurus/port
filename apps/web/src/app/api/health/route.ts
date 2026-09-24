@@ -12,5 +12,12 @@ export async function GET() {
   } catch (e) {
     meteoraSdk = (e as Error)?.message ?? String(e);
   }
-  return Response.json({ node: process.version, meteoraSdk, cluster: process.env.PORT_CLUSTER ?? "fork (default)" });
+  return Response.json({
+    node: process.version,
+    requireModule: (process.features as { require_module?: boolean }).require_module ?? null,
+    execArgv: process.execArgv,
+    nodeOptions: process.env.NODE_OPTIONS ?? null,
+    meteoraSdk,
+    cluster: process.env.PORT_CLUSTER ?? "fork (default)",
+  });
 }
