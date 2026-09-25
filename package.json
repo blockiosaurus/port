@@ -25,7 +25,8 @@
     "dev:fork": "RPC_URL=http://127.0.0.1:28899 PORT_CLUSTER=fork PORT=${PORT:-3100} pnpm --filter @port/web dev",
     "demo:record": "tsx scripts/record-demo.ts",
     "exec:register": "tsx --env-file-if-exists=.env scripts/register-executive.ts",
-    "deploy:sync": "bash deploy/sync.sh"
+    "deploy:sync": "bash deploy/sync.sh",
+    "demo:narrate": "tsx --env-file-if-exists=.env scripts/narrate-demo.ts"
   },
   "devDependencies": {
     "@types/node": "^26.6.2",
