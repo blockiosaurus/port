@@ -2,7 +2,7 @@
 
 **PORT is a Metaplex Core asset whose deterministic Asset Signer holds a portfolio of pre-IPO PreStocks. Every trade is signed through Core Execute, a bounded agent can run it under revocable delegation, and selling the account is one Core transfer: the stocks never move, only the ownership does.**
 
-> **Try it live:** `https://<droplet-domain>` (a hosted fork of mainnet: real programs and PreStocks pools, no real funds; pick a burner wallet in the header, hit **Faucet**, and follow the steps below). Hosting notes: [`docs/deploy-droplet.md`](docs/deploy-droplet.md).
+> **Try it live:** **[ownport.xyz](https://ownport.xyz)** (a hosted fork of mainnet: real programs and PreStocks pools, no real funds; pick a burner wallet in the header, hit **Faucet**, and follow the steps below). Hosting notes: [`docs/deploy-droplet.md`](docs/deploy-droplet.md).
 >
 > **Demo video:** [`docs/demo/port-demo.mp4`](docs/demo/port-demo.mp4) (2:33, recorded by driving the real UI on the mainnet fork; waits for live quotes and confirmations are fast-forwarded 8×) · Evidence: [`docs/evidence/`](docs/evidence)
 
