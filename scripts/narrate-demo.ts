@@ -55,13 +55,27 @@ async function speak(text: string): Promise<string> {
   return file;
 }
 
+/**
+ * Generated clips end with a breath or a soft hitch, audible because every line here is followed
+ * by silence. Trim what trails the last word (below -38 dB) and fade the last 180 ms out.
+ */
+function tidy(file: string): string {
+  const out = file.replace(/\.mp3$/, ".wav");
+  if (existsSync(out)) return out;
+  execFileSync("ffmpeg", ["-y", "-v", "error", "-i", file, "-af", "areverse,silenceremove=start_periods=1:start_silence=0.12:start_threshold=-38dB,areverse,afade=t=in:d=0.04", out]);
+  const len = probe(out);
+  execFileSync("ffmpeg", ["-y", "-v", "error", "-i", out, "-af", `afade=t=out:st=${Math.max(0, len - 0.18).toFixed(3)}:d=0.18`, `${out}.tmp.wav`]);
+  execFileSync("mv", [`${out}.tmp.wav`, out]);
+  return out;
+}
+
 async function main() {
   await mkdir(CACHE, { recursive: true });
   const videoLen = probe(INPUT);
   const clips: Array<{ file: string; start: number; len: number; cue: Cue; drift: number }> = [];
   let cursor = 0;
   for (const cue of CUES) {
-    const file = await speak(cue.text);
+    const file = tidy(await speak(cue.text));
     const len = probe(file);
     const start = Math.max(cue.at ?? 0, cursor);
     clips.push({ file, start, len, cue, drift: cue.at === undefined ? 0 : start - cue.at });
