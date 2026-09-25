@@ -21,29 +21,21 @@ const VOICE = process.env.ELEVENLABS_VOICE_ID ?? "jTm8RvtbGj4ihx7YyqdV"; // "Chr
 const MODEL = "eleven_multilingual_v2";
 const GAP = 0.35; // seconds between consecutive clips when the previous one overruns
 
-type Cue = { at: number; text: string };
+/** `at` anchors a line to a moment in the picture; lines without it follow the previous line. */
+type Cue = { at?: number; text: string };
 const CUES: Cue[] = [
-  { at: 0.9, text: "PORT. An investment account you can own." },
-  { at: 5.8, text: "A PORT is a Core asset on a mainnet fork. Its Asset Signer holds the stocks; only Core Execute can trade them." },
-  { at: 12.8, text: "Fund a burner wallet from the faucet." },
-  { at: 15.9, text: "Mint the PORT." },
-  { at: 18.3, text: "The mandate lives on the asset; update authority is renounced. Vermilion is the owner. The verdigris seal is the Asset Signer." },
-  { at: 26.3, text: "Deposit USDC into an account only Core Execute can move." },
-  { at: 31.1, text: "Now buy OpenAI." },
-  { at: 34.4, text: "The server quotes a live Jupiter route and runs every policy check: Pyth freshness, spread, deviation, issuer fee, slippage, cash floor. All pass." },
-  { at: 44.3, text: "The swap ran inside Core Execute. The Asset Signer holds the position, not the wallet." },
-  { at: 51.3, text: "Delegate to the agent." },
-  { at: 53.6, text: "It computes drift, plans the smallest rebalance, checks every trade, and executes through delegated Core Execute." },
-  { at: 62.4, text: "Each trade shows its rationale and every check. In thin pre-IPO books, the agent halves a trade when market impact is the only failing check." },
-  { at: 77.9, text: "Every price that permits or blocks a trade is shown, with its age, confidence and band." },
-  { at: 85.0, text: "The agent's token trades on a Meteora bonding curve quoted in tokenized NVIDIA. Fees accrue in stock; it is not a claim on the PORT." },
-  { at: 94.7, text: "The finale: Wallet A sells the whole PORT to Wallet B with one Core transfer." },
-  { at: 103.1, text: "Conveyed. The owner changed. The Asset Signer, every balance, and the mandate are identical. The delegation carried over and is flagged for review." },
-  { at: 116.2, text: "Wallet B now owns it: same Asset Signer, same positions, and a warning to review the inherited delegate." },
-  { at: 126.3, text: "The new owner sells Anduril through Core Execute, with the same checks." },
-  { at: 136.3, text: "Then revokes the inherited agent." },
-  { at: 140.2, text: "The full history travels with the account, every action verified on chain." },
-  { at: 147.4, text: "The stocks never moved. Ownership did." },
+  { at: 0.9, text: "This is PORT. An investment account you can actually own." },
+  { at: 5.8, text: "A brokerage account bundles custody, positions and automation, and the broker owns all of it. PORT makes that bundle one object on Solana: a Metaplex Core asset. This runs on a fork of mainnet: real programs, real PreStocks pools, no real money." },
+  { text: "The verdigris seal is the Asset Signer, a program-derived account that holds every position. The mandate lives on the asset itself; the creator has renounced update authority. The owner deposits USDC into an account only Core Execute can move." },
+  { at: 34.4, text: "Now a trade: buy OpenAI. Before anything is signed, the server quotes a live Jupiter route and runs every policy check: Pyth freshness, spread, size, cash floor. The owner signs, the swap runs inside Core Execute, and the position lands in the Asset Signer, not the wallet." },
+  { at: 51.3, text: "Trading by hand is only half of it. The owner can delegate execution to an agent: a registered MPL Agent executive whose key stays on the server. The agent reads positions and prices, computes drift, and plans the smallest rebalance back to target. Every trade goes through the same checks, and it signs through delegated Core Execute. When market impact is the only thing failing, it halves the trade instead of forcing it." },
+  { at: 77.9, text: "Every price that permits or blocks a trade is on screen, with its age and confidence. The agent also has its own market: a Meteora bonding curve quoted in tokenized NVIDIA, so its fees accrue in stock. That token is not a claim on the account." },
+  { at: 94.7, text: "Here is the point of all this. The owner sells the entire account to Wallet B with a single Core transfer." },
+  { at: 103.1, text: "Look at what changed and what didn't. The owner changed. The Asset Signer, every balance and the mandate are identical. Nothing moved. The agent delegation carried over too, and the new owner is told to review it." },
+  { at: 116.2, text: "Wallet B connects and is in control immediately: same account, same positions, same rules." },
+  { at: 126.3, text: "It sells some Anduril through Core Execute, then revokes the inherited agent. From here, the agent's next execute is rejected on chain." },
+  { at: 140.2, text: "And the full history travels with it: every action, signer and policy result, verified on chain." },
+  { at: 147.4, text: "The stocks never moved. Ownership did. That's PORT." },
 ];
 
 const probe = (f: string) => Number(execFileSync("ffprobe", ["-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0", f]).toString().trim());
@@ -56,7 +48,7 @@ async function speak(text: string): Promise<string> {
   const res = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${VOICE}?output_format=mp3_44100_128`, {
     method: "POST",
     headers: { "xi-api-key": key, "content-type": "application/json" },
-    body: JSON.stringify({ text, model_id: MODEL, voice_settings: { stability: 0.5, similarity_boost: 0.8, style: 0.15, speed: 1.12 } }),
+    body: JSON.stringify({ text, model_id: MODEL, voice_settings: { stability: 0.5, similarity_boost: 0.8, style: 0.15, speed: 1.1 } }),
   });
   if (!res.ok) throw new Error(`ElevenLabs ${res.status}: ${await res.text()}`);
   await writeFile(file, Buffer.from(await res.arrayBuffer()));
@@ -71,11 +63,11 @@ async function main() {
   for (const cue of CUES) {
     const file = await speak(cue.text);
     const len = probe(file);
-    const start = Math.max(cue.at, cursor);
-    clips.push({ file, start, len, cue, drift: start - cue.at });
+    const start = Math.max(cue.at ?? 0, cursor);
+    clips.push({ file, start, len, cue, drift: cue.at === undefined ? 0 : start - cue.at });
     cursor = start + len + GAP;
   }
-  for (const c of clips) console.log(`${c.cue.at.toFixed(1).padStart(6)}s  ${c.len.toFixed(1).padStart(5)}s  drift ${c.drift >= 1 ? "+" + c.drift.toFixed(1) + "s" : "   ok"}  ${c.cue.text.slice(0, 60)}`);
+  for (const c of clips) console.log(`${(c.cue.at ?? c.start).toFixed(1).padStart(6)}s  ${c.len.toFixed(1).padStart(5)}s  drift ${c.drift >= 1 ? "+" + c.drift.toFixed(1) + "s" : "   ok"}  ${c.cue.text.slice(0, 60)}`);
   const end = cursor - GAP;
   if (end > videoLen) console.warn(`⚠ narration ends at ${end.toFixed(1)}s, video is ${videoLen.toFixed(1)}s: trim the last lines`);
 
