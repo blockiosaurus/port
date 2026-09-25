@@ -15,7 +15,7 @@ import { existsSync } from "node:fs";
 import { mkdir, writeFile } from "node:fs/promises";
 
 const INPUT = process.env.DEMO_INPUT ?? "docs/demo/port-demo.mp4";
-const OUTPUT = process.env.DEMO_OUTPUT ?? "docs/demo/port-demo-narrated.mp4";
+const OUTPUT = process.env.DEMO_OUTPUT ?? "docs/demo/port-demo-narrated.mp4"; // rename over port-demo.mp4 once approved
 const CACHE = ".demo/narration";
 const VOICE = process.env.ELEVENLABS_VOICE_ID ?? "jTm8RvtbGj4ihx7YyqdV"; // "Christopher - Narrator & Host"
 const MODEL = "eleven_multilingual_v2";
