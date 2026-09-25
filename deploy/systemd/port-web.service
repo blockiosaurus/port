@@ -1,0 +1,17 @@
+[Unit]
+Description=PORT dashboard (next start on :3100)
+After=network-online.target port-fork.service
+Wants=network-online.target
+
+[Service]
+User=port
+WorkingDirectory=/opt/port/apps/web
+# RPC_URL / PORT_CLUSTER / PUBLIC_RPC_URL / PORT; written by deploy/remote-install.sh.
+# Everything else (Pyth, Jupiter, ClawPump keys) comes from /opt/port/.env via next.config.ts.
+EnvironmentFile=/etc/port-web.env
+ExecStart=/usr/bin/pnpm start
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target

@@ -71,9 +71,16 @@ export function errorJson(e: unknown, status = 400) {
   return json({ error: err.message ?? String(e), code: err.code }, { status });
 }
 
+/**
+ * The RPC the browser is told to use. It defaults to the server's own RPC_URL; a hosted fork sets
+ * PUBLIC_RPC_URL to its public HTTPS proxy (the browser signs and sends its own transactions, and
+ * explorer links need a URL that resolves outside the server).
+ */
+export const PUBLIC_RPC_URL = process.env.PUBLIC_RPC_URL ?? RPC_URL;
+
 export const env = () => ({
   cluster: CLUSTER,
-  rpcUrl: RPC_URL,
+  rpcUrl: PUBLIC_RPC_URL,
   pythConfigured: Boolean(process.env.PYTH_API_KEY),
   devPriceFallback: DEV_PRICE_FALLBACK,
   executive: executive()?.publicKey ?? null,

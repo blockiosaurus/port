@@ -1,0 +1,17 @@
+# PORT reverse proxy. Installed by deploy/remote-install.sh with {{DOMAIN}} substituted.
+#   /rpc   → the fork validator (JSON-RPC on 28899; websocket subscriptions on 28900)
+#   /*     → the Next.js dashboard on 3100
+# Caddy provisions the TLS certificate for the domain automatically.
+{{DOMAIN}} {
+	encode gzip
+
+	handle_path /rpc* {
+		@ws header Connection *Upgrade*
+		reverse_proxy @ws 127.0.0.1:28900
+		reverse_proxy 127.0.0.1:28899
+	}
+
+	handle {
+		reverse_proxy 127.0.0.1:3100
+	}
+}

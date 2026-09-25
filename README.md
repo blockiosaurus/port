@@ -2,9 +2,23 @@
 
 **PORT is a Metaplex Core asset whose deterministic Asset Signer holds a portfolio of pre-IPO PreStocks. Every trade is signed through Core Execute, a bounded agent can run it under revocable delegation, and selling the account is one Core transfer: the stocks never move, only the ownership does.**
 
+> **Try it live:** `https://<droplet-domain>` (a hosted fork of mainnet: real programs and PreStocks pools, no real funds; pick a burner wallet in the header, hit **Faucet**, and follow the steps below). Hosting notes: [`docs/deploy-droplet.md`](docs/deploy-droplet.md).
+>
 > **Demo video:** [`docs/demo/port-demo.mp4`](docs/demo/port-demo.mp4) (2:33, recorded by driving the real UI on the mainnet fork; waits for live quotes and confirmations are fast-forwarded 8×) · Evidence: [`docs/evidence/`](docs/evidence)
 
 ---
+
+### Test it in five minutes
+
+1. **Faucet**: fund the browser's burner Wallet A with SOL and fork USDC (fork only).
+2. **Create PORT**: mints the Core asset; its Asset Signer will hold everything.
+3. **Deposit** 2,500 USDC into the Asset Signer.
+4. **Trade → buy OPENAI**: watch every policy check pass, then sign it through Core Execute.
+5. **Delegate**, then **Run agent**: the agent completes the mandate under delegated Execute.
+6. **Transfer PORT** to Wallet B and read the before/after proof: same Asset Signer, same balances, new owner.
+7. **As Wallet B**: trade, then revoke the delegation you inherited.
+
+Repeated buys of the same name on one fork eventually trip the on-chain min-out check, because Jupiter quotes mainnet pools while trades move the cloned ones. That rejection is correct; try another name or a smaller size.
 
 ## Problem
 
