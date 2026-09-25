@@ -4,7 +4,7 @@
 
 > **Try it live:** **[ownport.xyz](https://ownport.xyz)** (a hosted fork of mainnet: real programs and PreStocks pools, no real funds; pick a burner wallet in the header, hit **Faucet**, and follow the steps below). Hosting notes: [`docs/deploy-droplet.md`](docs/deploy-droplet.md).
 >
-> **Demo video:** [`docs/demo/port-demo.mp4`](docs/demo/port-demo.mp4) (2:33, narrated; recorded by driving the real UI on the mainnet fork, waits for live quotes and confirmations fast-forwarded 8×) · Evidence: [`docs/evidence/`](docs/evidence)
+> **Demo video:** [youtu.be/Ix5DOrFZ-vk](https://youtu.be/Ix5DOrFZ-vk) · [`docs/demo/port-demo.mp4`](docs/demo/port-demo.mp4) (2:33, narrated; recorded by driving the real UI on the mainnet fork, waits for live quotes and confirmations fast-forwarded 8×) · Evidence: [`docs/evidence/`](docs/evidence)
 
 ---
 
