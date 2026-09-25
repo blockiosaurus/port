@@ -234,6 +234,13 @@ Treat it like a hot wallet: it lives on the server, so keep it off shared machin
 SOL in it, and rotate it by generating a new key (`EXECUTIVE_KEY_NAME`) and re-registering. Owners
 delegate to whatever key the dashboard advertises.
 
+**1b. Hosting the dashboard (Vercel).** The server reads the executive key from `EXECUTIVE_KEY`
+(the JSON byte array from `.keys/executive.json`) when no key file exists, and writes the activity
+log to `/tmp` because the deployed repo directory is read-only (the log is ephemeral there; the
+daily-notional cap resets with it). Set `RPC_URL`, `PORT_CLUSTER=mainnet-beta`, `PYTH_API_KEY`,
+`JUPITER_API_KEY` and `EXECUTIVE_KEY` in the project's environment, and turn off Vercel's
+deployment protection so the URL is public. `/api/health` reports the runtime and cluster.
+
 **2. A funded owner wallet.** Connect a Wallet Standard wallet (Phantom, Solflare, Backpack, …)
 from the dashboard header; on live clusters it is the only identity offered, and the browser
 burners are hidden. It needs SOL for rent and fees and USDC to deposit. The faucet returns 403 on

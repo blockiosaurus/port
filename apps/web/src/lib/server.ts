@@ -13,13 +13,25 @@ export const CLUSTER = (process.env.PORT_CLUSTER ?? "fork") as "fork" | "localne
 export const IS_LOCAL = CLUSTER === "fork" || CLUSTER === "localnet";
 export const DEV_PRICE_FALLBACK = IS_LOCAL && !process.env.PYTH_API_KEY && process.env.DEV_PRICE_FALLBACK === "1";
 
-export const activity = new ActivityStore(join(ROOT, ".demo/activity.json"));
+/**
+ * Activity log location. Locally it lives in the repo (.demo/); on a hosted deploy the repo
+ * directory is read-only, so it falls back to the function's /tmp (ephemeral: it survives warm
+ * invocations only, and the daily-notional cap resets with it). ACTIVITY_PATH overrides both.
+ */
+const ACTIVITY_PATH = process.env.ACTIVITY_PATH ?? (process.env.VERCEL ? "/tmp/port/activity.json" : join(ROOT, ".demo/activity.json"));
+export const activity = new ActivityStore(ACTIVITY_PATH);
 
+/**
+ * Key material comes from `.keys/<name>.json` (a solana-keygen byte array) or, for hosted deploys
+ * with no key files, from the env var `<NAME>_KEY` holding the same JSON array (e.g. EXECUTIVE_KEY).
+ */
 function loadKey(name: string): Signer | null {
+  const fromEnv = process.env[`${name.toUpperCase().replace(/-/g, "_")}_KEY`];
   const path = join(ROOT, ".keys", `${name}.json`);
-  if (!existsSync(path)) return null;
+  const raw = fromEnv ?? (existsSync(path) ? readFileSync(path, "utf8") : null);
+  if (!raw) return null;
   const umi = makeUmi(RPC_URL);
-  return createSignerFromKeypair(umi, umi.eddsa.createKeypairFromSecretKey(new Uint8Array(JSON.parse(readFileSync(path, "utf8")))));
+  return createSignerFromKeypair(umi, umi.eddsa.createKeypairFromSecretKey(new Uint8Array(JSON.parse(raw))));
 }
 
 /** The agent executive's key never leaves the server. */
