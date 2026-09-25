@@ -18,6 +18,12 @@ AGAVE_VERSION=v3.1.14                       # same as the version the fork was d
 PORT_DOMAIN="${PORT_DOMAIN:-$(curl -s -4 https://ifconfig.me).sslip.io}"
 
 export DEBIAN_FRONTEND=noninteractive
+# A fresh droplet runs unattended-upgrades on first boot; wait for it to release apt.
+for _ in $(seq 1 120); do
+  fuser /var/lib/dpkg/lock-frontend /var/lib/apt/lists/lock >/dev/null 2>&1 || break
+  echo "waiting for apt lock…"; sleep 5
+done
+systemctl stop unattended-upgrades 2>/dev/null || true
 apt-get update
 apt-get install -y curl git rsync build-essential pkg-config libssl-dev libudev-dev ufw \
   debian-keyring debian-archive-keyring apt-transport-https ca-certificates gnupg

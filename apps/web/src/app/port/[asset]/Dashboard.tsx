@@ -235,6 +235,10 @@ export default function Dashboard({ asset }: { asset: string }) {
           onSwitch={(id) => {
             setActive(id);
             setProof(null);
+            // Fork/localnet: the new owner is usually a fresh burner with no SOL for fees. Fund it
+            // so its first action as owner doesn't fail on "no prior credit".
+            const w = wallets.find((x) => x.id === id);
+            if (w && w.kind === "burner" && env.faucet) void run("faucet", () => faucet(env, w), () => `Funded ${w.label} with 5 SOL + 5,000 fork USDC`);
           }}
           onClose={() => setProof(null)}
         />
