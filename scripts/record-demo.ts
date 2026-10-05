@@ -17,6 +17,8 @@ const W = 1440, H = 900;
 
 type Mark = { from: number; to: number };
 const waits: Mark[] = [];
+/** When each caption/card appeared (raw seconds); written as cut-time anchors for demo:narrate. */
+const marks: Array<{ title: string; raw: number }> = [];
 let t0 = 0;
 const now = () => (Date.now() - t0) / 1000;
 
@@ -50,7 +52,14 @@ async function main() {
   const page = await context.newPage();
   t0 = Date.now();
 
-  const caption = (title: string, body = "") => page.evaluate(([t, b]) => (window as any).__caption(t, b), [title, body]);
+  const caption = (title: string, body = "") => {
+    if (title) marks.push({ title, raw: now() });
+    return page.evaluate(([t, b]) => (window as any).__caption(t, b), [title, body]);
+  };
+  const card = (title: string, body: string) => {
+    marks.push({ title, raw: now() });
+    return page.evaluate(([t, b]) => (window as any).__card(t, b), [title, body]);
+  };
   const hold = (s: number) => page.waitForTimeout(s * 1000);
   /** A wait on the network/chain: recorded so the edit can fast-forward it. */
   const waitFor = async (loc: Locator, timeout = 180_000) => {
@@ -64,7 +73,7 @@ async function main() {
   // 1. Thesis
   await page.goto(APP);
   await page.waitForLoadState("networkidle");
-  await page.evaluate(() => (window as any).__card("PORT", "An investment account you can own.<br/><span style='font-size:19px;color:#8a8373'>A Metaplex Core asset whose Asset Signer holds a pre-IPO PreStocks portfolio · Stocklana</span>"));
+  await card("PORT", "An investment account you can own.<br/><span style='font-size:19px;color:#8a8373'>A Metaplex Core asset whose Asset Signer holds a pre-IPO PreStocks portfolio · Stocklana</span>");
   await hold(5);
   await page.evaluate(() => (window as any).__uncard());
   await caption("The thesis", "A PORT is a Core asset. Its deterministic <b>Asset Signer</b> holds the portfolio and trades only through <b>Core Execute</b>. Running on a local fork of Solana mainnet: real programs, real PreStocks pools, no real funds.");
@@ -74,7 +83,7 @@ async function main() {
   await caption("Fund Wallet A", "Fork faucet: SOL + USDC for a browser burner wallet (Wallet A).");
   await btn("Faucet").click();
   await hold(3);
-  await caption("Mint AI Private Markets Fund #001", "One Core asset. The mandate is stored on the asset in an owner-managed plugin, an MPL Agent identity is registered, and update authority is renounced.");
+  await caption("Mint AI Private Markets Fund #001", "One Core asset in its own sealed collection. The mandate is stored on the asset in an owner-managed plugin, an MPL Agent identity is registered, and an mpl-hybrid share escrow is funded with 1,000,000 shares.");
   await btn("Create PORT").click();
   await waitFor(text("Net asset value"));
   await caption("The deed", "Vermilion = the <b>Core owner</b> (Wallet A). Verdigris seal = the <b>Asset Signer</b>, the PDA that will hold every position.");
@@ -86,16 +95,17 @@ async function main() {
   await page.getByRole("dialog").getByRole("button", { name: "Deposit", exact: true }).click();
   await waitFor(text(/Deposited 2,500 USDC into the Asset Signer/));
   await hold(3);
-  await caption("Buy OpenAI PreStocks", "The owner asks for $700 of OPENAI. Before anything is signed, the server quotes a live Jupiter route and runs every policy check against it.");
+  await caption("Buy Anthropic PreStocks", "The owner asks for $700 of ANTHROPIC. Before anything is signed, the server quotes a live Jupiter route and runs every policy check against it.");
   await btn("Trade").first().click();
+  await page.getByRole("dialog").getByRole("combobox").nth(1).selectOption("ANTHROPIC");
   await page.getByRole("dialog").getByRole("textbox").fill("700");
   await btn("Review trade").click();
   await waitFor(btn(/Sign & execute 1/));
   await caption("Pyth-gated risk review", "Pyth USDC/USD freshness and confidence, market spread, reference deviation, 1% issuer transfer fee, slippage, trade size, cash floor, program allowlist: all pass.");
   await hold(9);
   await btn(/Sign & execute 1/).click();
-  await waitFor(text(/buy OPENAI confirmed through Core Execute/));
-  await caption("Signed by the Asset Signer", "The Jupiter → Manifest swap ran inside Core Execute. The OPENAI position is held by the Asset Signer, not the wallet.");
+  await waitFor(text(/buy ANTHROPIC confirmed through Core Execute/));
+  await caption("Signed by the Asset Signer", "The Jupiter swap into the live PreStocks pool ran inside Core Execute. The ANTHROPIC position is held by the Asset Signer, not the wallet.");
   await page.getByRole("heading", { name: "Positions" }).scrollIntoViewIfNeeded();
   await hold(7);
 
@@ -140,30 +150,53 @@ async function main() {
   await hold(6);
   await btn("Faucet").click();
   await hold(4);
-  await caption("The new owner trades", "Wallet B sells $50 of Anduril through Core Execute, with the same policy checks.");
+  await caption("The new owner trades", "Wallet B sells $50 of Anthropic through Core Execute, with the same policy checks.");
   await btn("Trade").first().click();
   const dlg = page.getByRole("dialog");
   await dlg.getByRole("combobox").nth(0).selectOption("sell");
-  await dlg.getByRole("combobox").nth(1).selectOption("ANDURIL");
+  await dlg.getByRole("combobox").nth(1).selectOption("ANTHROPIC");
   await dlg.getByRole("textbox").fill("50");
   await btn("Review trade").click();
   await waitFor(btn(/Sign & execute 1/));
   await hold(3);
   await btn(/Sign & execute 1/).click();
-  await waitFor(text(/sell ANDURIL confirmed through Core Execute/));
+  await waitFor(text(/sell ANTHROPIC confirmed through Core Execute/));
   await hold(3);
   await caption("…and revokes the inherited agent", "Revoked on-chain. The agent's next Execute would be rejected.");
   await page.getByRole("button", { name: "Revoke" }).scrollIntoViewIfNeeded();
   await btn("Revoke").click();
   await waitFor(text(/Delegation revoked/));
   await hold(3);
+
+  // 8. Tokenize → shares → redeem
+  await page.getByRole("heading", { name: "Shares" }).scrollIntoViewIfNeeded();
+  await caption("Tokenize the account", "Wallet B locks the PORT in its mpl-hybrid escrow and receives the full supply of 1,000,000 shares. The escrow terms were sealed at creation.");
+  await hold(4);
+  await btn("Tokenize").click();
+  await waitFor(text(/PORT locked in its hybrid escrow/));
+  await page.evaluate(() => window.scrollTo({ top: 0, behavior: "smooth" }));
+  await caption("The escrow owns the deed", "Violet = the <b>Hybrid escrow</b>. Nobody can trade by hand, edit the mandate or delegate; a live agent delegation would keep running. Only every share, together, can take it back.");
+  await hold(8);
+  await page.getByRole("heading", { name: "Shares" }).scrollIntoViewIfNeeded();
+  await caption("Shares are plain SPL tokens", "Wallet B sends all 1,000,000 shares to Wallet A.");
+  await btn(/Send shares/).click();
+  await page.getByRole("dialog").getByRole("button", { name: "Send shares", exact: true }).click();
+  await waitFor(text(/Sent 1,000,000 shares/));
+  await hold(2);
+  await caption("Wallet A redeems", "Holding the full supply, Wallet A pays it back into escrow and takes the whole account out: same Asset Signer, same positions, same mandate.");
+  await page.getByRole("tablist", { name: "Acting wallet" }).getByRole("tab").first().click(); // Wallet A
+  await hold(3);
+  await btn("Redeem PORT").click({ timeout: 60_000 });
+  await waitFor(text(/Shares paid back into escrow/));
+  await page.evaluate(() => window.scrollTo({ top: 0, behavior: "smooth" }));
+  await hold(7);
   await page.getByRole("heading", { name: "Activity" }).scrollIntoViewIfNeeded();
   await caption("The full history travels with the account", "Every action, signer, rationale and policy result, each verified on-chain before it was recorded.");
   await hold(7);
 
-  // 8. Close
+  // 9. Close
   await caption("");
-  await page.evaluate(() => (window as any).__card("The stocks never moved.", "Ownership of the programmable account did.<br/><span style='font-size:18px;color:#8a8373'>Metaplex Core Execute · MPL Agent · PreStocks · Pyth · Meteora DBC</span>"));
+  await card("The stocks never moved.", "Ownership of the programmable account did.<br/><span style='font-size:18px;color:#8a8373'>Metaplex Core Execute · MPL Agent · mpl-hybrid · PreStocks · Pyth · Meteora DBC</span>");
   await hold(6);
 
   const video = page.video();
@@ -171,11 +204,15 @@ async function main() {
   await browser.close();
   const raw = video ? await video.path() : (await readdir(RAW)).map((f) => `${RAW}/${f}`)[0]!;
   await writeFile(`${RAW}/waits.json`, JSON.stringify(waits, null, 2));
-  cut(raw, `${OUT}/port-demo.mp4`, waits);
+  const toCut = cut(raw, `${OUT}/port-demo.mp4`, waits);
+  await writeFile(`${RAW}/captions.json`, JSON.stringify(marks.map((m) => ({ title: m.title, at: Number(toCut(m.raw).toFixed(2)) })), null, 2));
 }
 
-/** Keep everything at 1×, fast-forward recorded waits at 8× (label stays visible in the caption). */
-function cut(input: string, output: string, fast: Mark[]) {
+/**
+ * Keep everything at 1×, fast-forward recorded waits at 8× (label stays visible in the caption).
+ * Returns a raw-time → cut-time mapping so caption anchors can be exported for the narration.
+ */
+function cut(input: string, output: string, fast: Mark[]): (raw: number) => number {
   const dur = Number(execFileSync("ffprobe", ["-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0", input]).toString().trim());
   const segs: Array<{ a: number; b: number; speed: number }> = [];
   let cursor = 0;
@@ -190,6 +227,17 @@ function cut(input: string, output: string, fast: Mark[]) {
   execFileSync("ffmpeg", ["-y", "-v", "error", "-i", input, "-filter_complex", filter, "-map", "[out]", "-c:v", "libx264", "-preset", "medium", "-crf", "20", "-movflags", "+faststart", output], { stdio: "inherit" });
   const final = Number(execFileSync("ffprobe", ["-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0", output]).toString().trim());
   console.log(`raw ${dur.toFixed(0)}s → ${output} ${final.toFixed(0)}s (${fast.length} waits fast-forwarded)`);
+  return (raw: number) => {
+    let t = 0;
+    for (const s of segs) {
+      if (raw >= s.b) t += (s.b - s.a) / s.speed;
+      else {
+        if (raw > s.a) t += (raw - s.a) / s.speed;
+        break;
+      }
+    }
+    return t;
+  };
 }
 
 main().catch((e) => {

@@ -49,7 +49,9 @@ for (const t of DEMO_STRATEGY.targets.filter((t) => t.mint !== USDC_MAINNET)) {
   const tokAta = ata(t.mint, TOKEN_2022_PROGRAM);
   const buy = await jup.prepare({ inputMint: USDC_MAINNET, outputMint: t.mint, amountIn: 1_000_000_000n, slippageBps: 100, outputTransferFeeBps: 100 }, { authority: probe, sourceTokenAccount: usdcAta, destinationTokenAccount: tokAta });
   const sell = await jup.prepare({ inputMint: t.mint, outputMint: USDC_MAINNET, amountIn: buy.quote.minOutAmount / 2n, slippageBps: 100, inputTransferFeeBps: 100 }, { authority: probe, sourceTokenAccount: tokAta, destinationTokenAccount: usdcAta });
-  for (const p of [buy, sell]) {
+  // Small sells (≈$50, the dashboard demo size) can route through a different pool/lookup table than large ones.
+  const sellSmall = await jup.prepare({ inputMint: t.mint, outputMint: USDC_MAINNET, amountIn: buy.quote.minOutAmount / 20n, slippageBps: 100, inputTransferFeeBps: 100 }, { authority: probe, sourceTokenAccount: tokAta, destinationTokenAccount: usdcAta });
+  for (const p of [buy, sell, sellSmall]) {
     instructions.push(...p.instructions);
     p.addressLookupTables.forEach((a) => alts.add(a));
   }

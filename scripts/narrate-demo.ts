@@ -1,8 +1,10 @@
 /**
  * Adds a synthesized voice-over to the recorded demo. The captions burned into
  * docs/demo/port-demo.mp4 are the script; each cue below is spoken at the moment its caption
- * appears (times measured from the final cut). Audio is generated once per line with ElevenLabs
- * and cached, then mixed under the existing video with ffmpeg. The picture is not re-encoded.
+ * appears. Cue times come from .demo/video/captions.json, written by record-demo.ts in final-cut
+ * seconds (an `after` anchor names the caption; `at` is an explicit override). Audio is generated
+ * once per line with ElevenLabs and cached, then mixed under the existing video with ffmpeg.
+ * The picture is not re-encoded.
  *
  *   ELEVENLABS_API_KEY=… pnpm demo:narrate        → docs/demo/port-demo-narrated.mp4
  *
@@ -11,7 +13,7 @@
  */
 import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { existsSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { mkdir, writeFile } from "node:fs/promises";
 
 const INPUT = process.env.DEMO_INPUT ?? "docs/demo/port-demo.mp4";
@@ -21,22 +23,36 @@ const VOICE = process.env.ELEVENLABS_VOICE_ID ?? "jTm8RvtbGj4ihx7YyqdV"; // "Chr
 const MODEL = "eleven_multilingual_v2";
 const GAP = 0.35; // seconds between consecutive clips when the previous one overruns
 
-/** `at` anchors a line to a moment in the picture; lines without it follow the previous line. */
-type Cue = { at?: number; text: string };
+/** `after` anchors a line to the caption with that title; `at` is seconds; lines with neither follow the previous line. */
+type Cue = { at?: number; after?: string; text: string };
 const CUES: Cue[] = [
-  { at: 0.9, text: "This is PORT. An investment account you can actually own." },
-  { at: 5.8, text: "A brokerage account bundles custody, positions and automation, and the broker owns all of it. PORT makes that bundle one object on Solana: a Metaplex Core asset. This runs on a fork of mainnet: real programs, real PreStocks pools, no real money." },
-  { text: "The verdigris seal is the Asset Signer, a program-derived account that holds every position. The mandate lives on the asset itself; the creator has renounced update authority. The owner deposits USDC into an account only Core Execute can move." },
-  { at: 34.4, text: "Now a trade: buy OpenAI. Before anything is signed, the server quotes a live Jupiter route and runs every policy check: Pyth freshness, spread, size, cash floor. The owner signs, the swap runs inside Core Execute, and the position lands in the Asset Signer, not the wallet." },
-  { at: 51.3, text: "Trading by hand is only half of it. The owner can delegate execution to an agent: a registered MPL Agent executive whose key stays on the server. The agent reads positions and prices, computes drift, and plans the smallest rebalance back to target. Every trade goes through the same checks, and it signs through delegated Core Execute. When market impact is the only thing failing, it halves the trade instead of forcing it." },
-  { at: 77.9, text: "Every price that permits or blocks a trade is on screen, with its age and confidence. The agent also has its own market: a Meteora bonding curve quoted in tokenized NVIDIA, so its fees accrue in stock. That token is not a claim on the account." },
-  { at: 94.7, text: "Here is the point of all this. The owner sells the entire account to Wallet B with a single Core transfer." },
-  { at: 103.1, text: "Look at what changed and what didn't. The owner changed. The Asset Signer, every balance and the mandate are identical. Nothing moved. The agent delegation carried over too, and the new owner is told to review it." },
-  { at: 116.2, text: "Wallet B connects and is in control immediately: same account, same positions, same rules." },
-  { at: 126.3, text: "It sells some Anduril through Core Execute, then revokes the inherited agent. From here, the agent's next execute is rejected on chain." },
-  { at: 140.2, text: "And the full history travels with it: every action, signer and policy result, verified on chain." },
-  { at: 147.4, text: "The stocks never moved. Ownership did. That's PORT." },
+  { after: "PORT", text: "This is PORT. An investment account you can actually own." },
+  { after: "The thesis", text: "A brokerage account bundles custody, positions and automation, and the broker owns all of it. PORT makes that bundle one object on Solana: a Metaplex Core asset. This runs on a fork of mainnet: real programs, real PreStocks pools, no real money." },
+  { text: "The verdigris seal is the Asset Signer, a program-derived account that holds every position. The mandate lives on the asset itself, inside a sealed collection, and an escrow already holds one million shares of it. The owner deposits USDC into an account only Core Execute can move." },
+  { after: "Buy Anthropic PreStocks", text: "Now a trade: buy Anthropic. Before anything is signed, the server quotes a live Jupiter route and runs every policy check: Pyth freshness, spread, size, cash floor. The owner signs, the swap runs inside Core Execute, and the position lands in the Asset Signer, not the wallet." },
+  { after: "Delegate to the agent", text: "Trading by hand is only half of it. The owner can delegate execution to an agent: a registered MPL Agent executive whose key stays on the server. The agent reads positions and prices, computes drift, and plans the smallest rebalance back to target. Every trade goes through the same checks, and it signs through delegated Core Execute. When market impact is the only thing failing, it halves the trade instead of forcing it." },
+  { after: "Prices that permit or block", text: "Every price that permits or blocks a trade is on screen, with its age and confidence. The agent also has its own market: a Meteora bonding curve quoted in tokenized NVIDIA, so its fees accrue in stock. That token is not a claim on the account." },
+  { after: "The finale: transfer the account", text: "Here is the point of all this. The owner sells the entire account to Wallet B with a single Core transfer." },
+  { after: "Conveyed", text: "Look at what changed and what didn't. The owner changed. The Asset Signer, every balance and the mandate are identical. Nothing moved. The agent delegation carried over too, and the new owner is told to review it." },
+  { after: "Wallet B is now the owner", text: "Wallet B connects and is in control immediately: same account, same positions, same rules." },
+  { after: "The new owner trades", text: "It sells some Anthropic through Core Execute, then revokes the inherited agent. From here, the agent's next execute is rejected on chain." },
+  { after: "Tokenize the account", text: "One more way to own it. Wallet B tokenizes the account: one mpl-hybrid swap locks the PORT in escrow and pays out all one million shares." },
+  { after: "The escrow owns the deed", text: "The escrow is the owner now. Nobody can trade by hand, change the mandate or delegate, while a live agent delegation would keep running. The terms were sealed at creation; only the full supply can take the account back." },
+  { after: "Shares are plain SPL tokens", text: "The shares are ordinary tokens. Wallet B sends all of them to Wallet A." },
+  { after: "Wallet A redeems", text: "Holding every share, Wallet A pays them back into escrow and takes the whole account out. Same Asset Signer, same positions, same mandate." },
+  { after: "The full history travels with the account", text: "And the full history travels with it: every action, signer and policy result, verified on chain." },
+  { after: "The stocks never moved.", text: "The stocks never moved. Ownership did. That's PORT." },
 ];
+
+const CAPTIONS = ".demo/video/captions.json";
+function anchorOf(cue: Cue): number | undefined {
+  if (cue.at !== undefined) return cue.at;
+  if (!cue.after) return undefined;
+  const marks: Array<{ title: string; at: number }> = JSON.parse(readFileSync(CAPTIONS, "utf8"));
+  const m = marks.find((x) => x.title === cue.after);
+  if (!m) throw new Error(`No caption titled "${cue.after}" in ${CAPTIONS}`);
+  return m.at;
+}
 
 const probe = (f: string) => Number(execFileSync("ffprobe", ["-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0", f]).toString().trim());
 
@@ -77,8 +93,9 @@ async function main() {
   for (const cue of CUES) {
     const file = tidy(await speak(cue.text));
     const len = probe(file);
-    const start = Math.max(cue.at ?? 0, cursor);
-    clips.push({ file, start, len, cue, drift: cue.at === undefined ? 0 : start - cue.at });
+    const at = anchorOf(cue);
+    const start = Math.max(at ?? 0, cursor);
+    clips.push({ file, start, len, cue, drift: at === undefined ? 0 : start - at });
     cursor = start + len + GAP;
   }
   for (const c of clips) console.log(`${(c.cue.at ?? c.start).toFixed(1).padStart(6)}s  ${c.len.toFixed(1).padStart(5)}s  drift ${c.drift >= 1 ? "+" + c.drift.toFixed(1) + "s" : "   ok"}  ${c.cue.text.slice(0, 60)}`);
