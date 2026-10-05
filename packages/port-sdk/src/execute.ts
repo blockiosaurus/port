@@ -29,6 +29,8 @@ export type ExecuteAs =
 
 export type GuardedExecuteInput = {
   asset: PublicKey;
+  /** The PORT's Core collection; required by Core when the asset belongs to one. `guardedExecute` fills it in. */
+  collection?: PublicKey;
   instructions: Instruction[];
   allowedPrograms: readonly string[];
   as: ExecuteAs;
@@ -68,6 +70,7 @@ export function buildGuardedExecute(umi: Umi, input: GuardedExecuteInput) {
     .add(
       execute(umi, {
         asset: { publicKey: input.asset },
+        ...(input.collection ? { collection: { publicKey: input.collection } } : {}),
         instructions: input.instructions,
         ...(executionDelegateRecord ? { executionDelegateRecord } : {}),
       }),
@@ -76,14 +79,14 @@ export function buildGuardedExecute(umi: Umi, input: GuardedExecuteInput) {
 }
 
 export async function guardedExecute(umi: Umi, input: GuardedExecuteInput): Promise<SentTx> {
+  const port = await fetchPort(umi, input.asset);
   if (input.as.authority === "owner") {
-    const port = await fetchPort(umi, input.asset);
     if (port.owner !== umi.identity.publicKey) throw new PortError("NOT_AUTHORIZED", "Connected wallet does not own this PORT.");
   } else {
     const d = await fetchDelegate(umi, input.asset, umi.identity.publicKey);
     if (!d) throw new PortError("NOT_DELEGATED", "Connected wallet has no execution delegation for this PORT.");
   }
-  return send(umi, buildGuardedExecute(umi, input));
+  return send(umi, buildGuardedExecute(umi, { ...input, collection: input.collection ?? port.collection ?? undefined }));
 }
 
 // --- Delegation (MPL Agent Tools) -------------------------------------------------------

@@ -4,7 +4,7 @@
  */
 import { readFile } from "node:fs/promises";
 import { publicKey } from "@metaplex-foundation/umi";
-import { fetchPort, fetchPortBalances, findPortSigner, listDelegates, makeUmi } from "@port/port-sdk";
+import { SEALED_AUTHORITY, SHARE_SUPPLY, fetchPort, fetchPortBalances, fetchPortShares, findPortSigner, listDelegates, makeUmi } from "@port/port-sdk";
 import { fromBaseUnits } from "@port/shared";
 
 const state = JSON.parse(await readFile(".demo/state.json", "utf8"));
@@ -19,7 +19,9 @@ const port = await fetchPort(umi, publicKey(state.asset));
 check(port.signer === state.assetSigner, "Asset Signer matches recorded address", port.signer);
 check(findPortSigner(makeUmi(process.env.VERIFY_RPC_URL ?? state.rpcUrl), port.asset) === port.signer, "Asset Signer derivation is deterministic");
 check(port.owner === state.walletB, "Current owner is Wallet B", port.owner);
-check(port.updateAuthority === "None", "Update authority renounced (creator keeps no control)");
+check(port.collectionAuthority === SEALED_AUTHORITY, "Collection sealed (creator keeps no control; escrow terms immutable)", port.collection ?? "no collection");
+const shares = await fetchPortShares(umi, port);
+check(!!shares && shares.sealed && shares.supply === SHARE_SUPPLY, "mpl-hybrid share escrow: full-supply redeem", shares ? `${shares.tokenized ? "tokenized" : "held by owner"}, mint ${shares.mint}` : "missing");
 check(port.agentIdentity !== null, "MPL Agent identity registered");
 
 const balances = await fetchPortBalances(umi, port);

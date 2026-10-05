@@ -1,8 +1,8 @@
 import { publicKey, type Instruction, type Umi } from "@metaplex-foundation/umi";
 import { fromBaseUnits, toBaseUnits, type Cluster, type PortActivity, type PriceSnapshot, type RiskDecision } from "@port/shared";
 import {
-  ataFor, BASE_PROGRAM_ALLOWLIST, fetchLookupTables, fetchMintInfo, fetchPort, fetchPortBalances, guardedExecute, listDelegates,
-  type Balance, type DelegateInfo, type PortAccount,
+  ataFor, BASE_PROGRAM_ALLOWLIST, fetchLookupTables, fetchMintInfo, fetchPort, fetchPortBalances, fetchPortShares, guardedExecute, listDelegates,
+  type Balance, type DelegateInfo, type PortAccount, type PortShares,
 } from "@port/port-sdk";
 import { evaluateTrade, planRebalance, unitsForNotional, valuePortfolio, type PlannedTrade, type RebalancePlan, type Valuation } from "@port/risk-engine";
 import type { ActivityStore } from "./activity";
@@ -31,6 +31,8 @@ export type PortSnapshot = {
   prices: Map<string, PriceSnapshot>;
   valuation: Valuation;
   delegates: DelegateInfo[];
+  /** mpl-hybrid share escrow state; null for PORTs created before share support. */
+  shares: PortShares | null;
   profiles: Map<string, Token2022Profile>;
   warnings: string[];
 };
@@ -52,10 +54,11 @@ async function profilesFor(rpcUrl: string, mints: string[]): Promise<Map<string,
 
 export async function loadSnapshot(ctx: AgentContext, asset: string): Promise<PortSnapshot> {
   const port = await fetchPort(ctx.umi, publicKey(asset));
-  const [balances, profiles, delegates] = await Promise.all([
+  const [balances, profiles, delegates, shares] = await Promise.all([
     fetchPortBalances(ctx.umi, port),
     profilesFor(ctx.rpcUrl, port.strategy.targets.map((t) => t.mint)),
     listDelegates(ctx.umi, port.asset, (ctx.knownExecutives ?? []).map((k) => publicKey(k))),
+    fetchPortShares(ctx.umi, port),
   ]);
   const { prices, warnings } = await buildPriceSnapshots(port.strategy, {
     pyth: ctx.pyth ?? new PythHermesClient(),
@@ -64,7 +67,7 @@ export async function loadSnapshot(ctx: AgentContext, asset: string): Promise<Po
     devFallback: ctx.devPriceFallback === true && (ctx.cluster === "fork" || ctx.cluster === "localnet"),
   });
   const valuation = valuePortfolio(port.strategy, balances, prices);
-  return { port, balances, prices, valuation, delegates, profiles, warnings };
+  return { port, balances, prices, valuation, delegates, shares, profiles, warnings };
 }
 
 export type EvaluatedTrade = {

@@ -59,7 +59,7 @@ export type RiskCheck = {
 export type RiskDecision = { allowed: boolean; checks: RiskCheck[] };
 
 export type Authority = "owner" | "delegate";
-export type ActivityAction = "create" | "deposit" | "trade" | "delegate" | "revoke" | "transfer";
+export type ActivityAction = "create" | "deposit" | "trade" | "delegate" | "revoke" | "transfer" | "tokenize" | "redeem";
 export type ActivityStatus = "proposed" | "submitted" | "confirmed" | "failed";
 
 export const PortActivitySchema = z.object({
@@ -67,7 +67,7 @@ export const PortActivitySchema = z.object({
   portAsset: base58,
   actor: base58,
   authority: z.enum(["owner", "delegate"]),
-  action: z.enum(["create", "deposit", "trade", "delegate", "revoke", "transfer"]),
+  action: z.enum(["create", "deposit", "trade", "delegate", "revoke", "transfer", "tokenize", "redeem"]),
   rationale: z.string().optional(),
   riskDecision: z
     .object({

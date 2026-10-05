@@ -7,9 +7,9 @@ import { generateSigner, publicKey, sol, transactionBuilder, type Signer, type U
 import { createMint, createIdempotentAssociatedToken, findAssociatedTokenPda, mintTokensTo } from "@metaplex-foundation/mpl-toolbox";
 import { PortStrategySchema } from "@port/shared";
 import {
-  BASE_PROGRAM_ALLOWLIST, LOCALNET_RPC, PortError, createPort, delegateExecution, depositToPort, ensureExecutive,
-  fetchDelegate, fetchMintInfo, fetchPort, fetchPortBalances, findPortSigner, guardedExecute, buildGuardedExecute,
-  listDelegates, makeUmi, revokeExecution, send, signerTokenTransferIx, transferPort,
+  BASE_PROGRAM_ALLOWLIST, LOCALNET_RPC, PortError, SEALED_AUTHORITY, SHARE_SUPPLY, createPort, delegateExecution, depositToPort, ensureExecutive,
+  fetchDelegate, fetchMintInfo, fetchPort, fetchPortBalances, fetchPortShares, findPortSigner, guardedExecute, buildGuardedExecute,
+  listDelegates, makeUmi, redeemPort, revokeExecution, send, shareBalance, signerTokenTransferIx, tokenizePort, transferPort, transferShares,
 } from "../src";
 
 const RPC = process.env.RPC_URL ?? LOCALNET_RPC;
@@ -36,7 +36,8 @@ describe.skipIf(!up)("PORT lifecycle on real programs", () => {
   const tryExec = async (umi: Umi, to: Signer, as: Parameters<typeof buildGuardedExecute>[1]["as"]) => {
     // Skip client-side guards to prove the *on-chain* program rejects.
     const ixs = await withdrawIx(umi, to, 1_000n);
-    return send(umi, buildGuardedExecute(umi, { asset, instructions: ixs, allowedPrograms: BASE_PROGRAM_ALLOWLIST, as }));
+    const { collection } = await fetchPort(umi, asset);
+    return send(umi, buildGuardedExecute(umi, { asset, collection: collection ?? undefined, instructions: ixs, allowedPrograms: BASE_PROGRAM_ALLOWLIST, as }));
   };
 
   beforeAll(async () => {
@@ -49,7 +50,7 @@ describe.skipIf(!up)("PORT lifecycle on real programs", () => {
       .add(mintTokensTo(A.umi, { mint: usdc.publicKey, token: ata, amount: 10_000_000_000n })));
   }, 60_000);
 
-  it("creates a PORT with sealed update authority and a deterministic signer", async () => {
+  it("creates a PORT in a sealed collection with a share escrow and a deterministic signer", async () => {
     const strategy = PortStrategySchema.parse({
       version: 1, name: "Test Fund", targets: [{ mint: usdc.publicKey, symbol: "USDC", weightBps: 10_000 }], cashMint: usdc.publicKey,
       minCashWeightBps: 0, rebalanceToleranceBps: 100, maxPositionWeightBps: 10_000, maxTradeNavBps: 1000, maxPriceAgeSeconds: 60, maxSpreadBps: 100,
@@ -59,8 +60,12 @@ describe.skipIf(!up)("PORT lifecycle on real programs", () => {
     sigs.create = res.signature;
     const port = await fetchPort(base, asset);
     expect(port.owner).toBe(A.s.publicKey);
-    expect(port.updateAuthority).toBe("None");
+    expect(port.updateAuthority).toBe("Collection");
+    expect(port.collection).toBe(res.collection);
+    expect(port.collectionAuthority).toBe(SEALED_AUTHORITY);
     expect(port.agentIdentity).not.toBeNull();
+    const shares = await fetchPortShares(base, port);
+    expect(shares).toMatchObject({ tokenized: false, sealed: true, supply: SHARE_SUPPLY, escrowBalance: SHARE_SUPPLY, mint: res.shareMint });
     expect(port.signer).toBe(res.signer);
     expect(findPortSigner(makeUmi(RPC), asset)).toBe(res.signer); // any client, same PDA
     expect(port.strategy.name).toBe("Test Fund");
@@ -118,6 +123,36 @@ describe.skipIf(!up)("PORT lifecycle on real programs", () => {
     sigs.revoke = (await revokeExecution(B.umi, asset, EXEC.s.publicKey)).signature;
     await expect(tryExec(EXEC.umi, EXEC.s, { authority: "delegate" })).rejects.toMatchObject({ code: "NOT_AUTHORIZED" });
     expect(await fetchDelegate(base, asset, EXEC.s.publicKey)).toBeNull();
+  });
+
+  it("owner tokenizes: the escrow owns the PORT, the owner holds the full supply, the delegate still executes", async () => {
+    await delegateExecution(B.umi, asset, EXEC.s.publicKey);
+    sigs.tokenize = (await tokenizePort(B.umi, asset)).signature;
+    const port = await fetchPort(base, asset);
+    const s = (await fetchPortShares(base, port))!;
+    expect(s.tokenized).toBe(true);
+    expect(port.owner).toBe(s.escrow);
+    expect(s.escrowBalance).toBe(0n);
+    expect(await shareBalance(base, s.mint, B.s.publicKey)).toBe(SHARE_SUPPLY);
+    // The escrow PDA is the owner now: the old owner's Execute is rejected by Core...
+    await expect(tryExec(B.umi, B.s, { authority: "owner" })).rejects.toMatchObject({ code: "NOT_AUTHORIZED" });
+    // ...but the delegate record is untouched by the transfer into escrow.
+    sigs.delegateWhileTokenized = (await tryExec(EXEC.umi, EXEC.s, { authority: "delegate" })).signature;
+    await expect(tokenizePort(B.umi, asset)).rejects.toMatchObject({ code: "ALREADY_TOKENIZED" });
+  });
+
+  it("redeeming needs the full supply; the holder of every share captures the PORT", async () => {
+    const s = (await fetchPortShares(base, await fetchPort(base, asset)))!;
+    await expect(redeemPort(A.umi, asset)).rejects.toMatchObject({ code: "INSUFFICIENT_SHARES" });
+    await transferShares(B.umi, s.mint, A.s.publicKey, SHARE_SUPPLY);
+    sigs.redeem = (await redeemPort(A.umi, asset)).signature;
+    const port = await fetchPort(base, asset);
+    expect(port.owner).toBe(A.s.publicKey);
+    expect(await fetchPortShares(base, port)).toMatchObject({ tokenized: false, escrowBalance: SHARE_SUPPLY });
+    expect(await shareBalance(base, s.mint, A.s.publicKey)).toBe(0n);
+    sigs.redeemedOwnerExecute = (await tryExec(A.umi, A.s, { authority: "owner" })).signature;
+    await expect(tryExec(B.umi, B.s, { authority: "owner" })).rejects.toMatchObject({ code: "NOT_AUTHORIZED" });
+    sigs.revoke = (await revokeExecution(A.umi, asset, EXEC.s.publicKey)).signature;
     console.log("PORT lifecycle signatures", { asset, ...sigs });
   });
 });

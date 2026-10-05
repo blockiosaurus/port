@@ -10,6 +10,7 @@ export const PORT_PROGRAMS = [
   "1DREGFgysWYxLnRnKQnwrxnJQeSMk2HmGaC6whw2B2p", // MPL Agent identity
   "TLREGni9ZEyGC3vnPZtqUh95xQ8oPqJSvNjvB7FGK8S", // MPL Agent tools (execution delegation)
   "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb", // Token-2022 at the mainnet version (PreStocks extensions)
+  "MPL4o4wMzndgh8T1NVDxELQCj5UQfYTYEkabX3wNKtb", // mpl-hybrid (PORT share escrow)
 ];
 const BUILTINS = new Set([
   "11111111111111111111111111111111", "ComputeBudget111111111111111111111111111111", "SysvarRent111111111111111111111111111111111",

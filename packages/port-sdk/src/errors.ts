@@ -6,6 +6,10 @@ export type PortErrorCode =
   | "UNEXPECTED_SIGNER"
   | "INVALID_STRATEGY"
   | "SLIPPAGE_EXCEEDED"
+  | "NOT_TOKENIZABLE"
+  | "ALREADY_TOKENIZED"
+  | "NOT_TOKENIZED"
+  | "INSUFFICIENT_SHARES"
   | "TX_FAILED";
 
 export class PortError extends Error {

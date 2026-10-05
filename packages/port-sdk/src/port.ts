@@ -10,7 +10,7 @@ import {
   type Umi,
 } from "@metaplex-foundation/umi";
 import { base58 } from "@metaplex-foundation/umi/serializers";
-import { create, fetchAsset, findAssetSignerPda, transfer, updateV2, type AssetV1 } from "@metaplex-foundation/mpl-core";
+import { collectionAddress, create, createCollection, fetchAsset, fetchCollectionV1, findAssetSignerPda, transfer, updateCollectionV1, type AssetV1 } from "@metaplex-foundation/mpl-core";
 import {
   createIdempotentAssociatedToken,
   findAssociatedTokenPda,
@@ -21,7 +21,9 @@ import {
 } from "@metaplex-foundation/mpl-toolbox";
 import { findAgentIdentityV2Pda, registerIdentityV1, safeFetchAgentIdentityV2 } from "@metaplex-foundation/mpl-agent-registry";
 import { PortStrategySchema, type PortStrategy } from "@port/shared";
+import { safeFetchEscrowV1 } from "@metaplex-foundation/mpl-hybrid";
 import { PortError, toPortError } from "./errors";
+import { findEscrow, hybridSetupIxs, SEALED_AUTHORITY } from "./hybrid";
 
 export const TOKEN_PROGRAM = publicKey("TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA");
 export const TOKEN_2022_PROGRAM = publicKey("TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb");
@@ -37,7 +39,12 @@ export type PortAccount = {
   owner: PublicKey;
   /** Deterministic PDA that custodies every PORT position. */
   signer: PublicKey;
+  /** "Collection" for PORTs created with share support; "None" for older, collection-less PORTs. */
   updateAuthority: string;
+  /** The PORT's own one-asset Core collection (null for older PORTs). */
+  collection: PublicKey | null;
+  /** The collection's update authority: SEALED_AUTHORITY once the share escrow is locked in. */
+  collectionAuthority: string | null;
   strategy: PortStrategy;
   agentIdentity: PublicKey | null;
   raw: AssetV1;
@@ -116,41 +123,65 @@ export type CreatePortInput = {
 };
 
 /**
- * Creates the PORT (two transactions: the mandate alone nearly fills one):
- *  1. Core asset owned by the caller, with the strategy in an owner-managed Attributes plugin
- *     (so the mandate travels with ownership and only the current owner can edit it);
- *  2. MPL Agent identity registration (required for execution delegation);
- *  3. renounces update authority, so the original creator keeps no control after a sale;
- *  4. seeds the Asset Signer with SOL for token-account rent.
+ * Creates the PORT (four transactions; the mandate alone nearly fills one):
+ *  1. a one-asset Core collection, update authority = creator for now;
+ *  2. the Core asset inside it, owned by the caller, with the strategy in an owner-managed
+ *     Attributes plugin (so the mandate travels with ownership and only the owner can edit it);
+ *  3. the share mint and the collection's mpl-hybrid escrow, funded with the full supply;
+ *  4. MPL Agent identity registration, the collection seal (authority → System Program, which
+ *     also freezes the escrow terms), and SOL for the Asset Signer's token-account rent.
  */
-export async function createPort(umi: Umi, input: CreatePortInput): Promise<SentTx & { asset: PublicKey; signer: PublicKey; setupSignature: string }> {
+export async function createPort(
+  umi: Umi,
+  input: CreatePortInput,
+): Promise<SentTx & { asset: PublicKey; signer: PublicKey; collection: PublicKey; shareMint: PublicKey; setupSignature: string }> {
   const asset = input.asset ?? generateSigner(umi);
+  const collection = generateSigner(umi);
+  const shareMint = generateSigner(umi);
   const signer = findPortSigner(umi, asset.publicKey);
+  await send(umi, createCollection(umi, { collection, name: input.name, uri: input.uri }));
   const created = await send(
     umi,
     create(umi, {
       asset,
+      collection: { publicKey: collection.publicKey },
       name: input.name,
       uri: input.uri,
       plugins: [{ type: "Attributes", attributeList: encodeStrategy(input.strategy), authority: { type: "Owner" } }],
     }),
   );
-  const setup = await completePortSetup(umi, asset.publicKey, input);
-  return { ...created, asset: asset.publicKey, signer, setupSignature: setup.signature };
+  const setup = await completePortSetup(umi, asset.publicKey, { ...input, shareMint });
+  return { ...created, asset: asset.publicKey, signer, collection: collection.publicKey, shareMint: shareMint.publicKey, setupSignature: setup.signature };
 }
 
 /**
- * Second half of creation (idempotent-safe to retry if it failed): register the MPL Agent
- * identity, renounce update authority, and seed the Asset Signer with rent.
+ * Second half of creation (safe to retry: every step is skipped once it exists): share escrow,
+ * MPL Agent identity, collection seal, Asset Signer rent. Must be called by the creator while
+ * the collection is still unsealed.
  */
-export async function completePortSetup(umi: Umi, asset: PublicKey, input: Pick<CreatePortInput, "agentRegistrationUri" | "signerRentLamports">): Promise<SentTx> {
+export async function completePortSetup(
+  umi: Umi,
+  asset: PublicKey,
+  input: Pick<CreatePortInput, "agentRegistrationUri" | "signerRentLamports"> & { shareMint?: Signer },
+): Promise<SentTx> {
   const signer = findPortSigner(umi, asset);
-  const identity = await safeFetchAgentIdentityV2(umi, findAgentIdentityV2Pda(umi, { asset })[0]);
+  const raw = await fetchAsset(umi, asset);
+  const collection = collectionAddress(raw);
+  if (!collection) throw new PortError("NOT_A_PORT", "PORT asset is not in a collection; it cannot carry a share escrow.");
+  const [identity, escrow, col] = await Promise.all([
+    safeFetchAgentIdentityV2(umi, findAgentIdentityV2Pda(umi, { asset })[0]),
+    safeFetchEscrowV1(umi, findEscrow(umi, collection)),
+    fetchCollectionV1(umi, collection),
+  ]);
+  if (!escrow) {
+    if (!input.shareMint) throw new PortError("TX_FAILED", "A share mint signer is required to initialise the share escrow.");
+    await send(umi, hybridSetupIxs(umi, { collection, shareMint: input.shareMint, name: raw.name, uri: raw.uri }));
+  }
   let b = transactionBuilder();
-  if (!identity) b = b.add(registerIdentityV1(umi, { asset, agentRegistrationUri: input.agentRegistrationUri }));
-  b = b
-    .add(updateV2(umi, { asset, newUpdateAuthority: { __kind: "None" }, newName: null, newUri: null }))
-    .add(transferSol(umi, { destination: signer, amount: { basisPoints: input.signerRentLamports ?? 50_000_000n, identifier: "SOL", decimals: 9 } }));
+  if (!identity) b = b.add(registerIdentityV1(umi, { asset, collection, agentRegistrationUri: input.agentRegistrationUri }));
+  if (col.updateAuthority !== SEALED_AUTHORITY)
+    b = b.add(updateCollectionV1(umi, { collection, newUpdateAuthority: SEALED_AUTHORITY, newName: null, newUri: null }));
+  b = b.add(transferSol(umi, { destination: signer, amount: { basisPoints: input.signerRentLamports ?? 50_000_000n, identifier: "SOL", decimals: 9 } }));
   return send(umi, b);
 }
 
@@ -163,7 +194,8 @@ export async function fetchPort(umi: Umi, asset: PublicKey): Promise<PortAccount
   }
   const strategy = decodeStrategy(raw.attributes?.attributeList);
   const identityPda = findAgentIdentityV2Pda(umi, { asset })[0];
-  const identity = await safeFetchAgentIdentityV2(umi, identityPda);
+  const collection = collectionAddress(raw) ?? null;
+  const [identity, col] = await Promise.all([safeFetchAgentIdentityV2(umi, identityPda), collection ? fetchCollectionV1(umi, collection) : null]);
   return {
     asset,
     name: raw.name,
@@ -171,6 +203,8 @@ export async function fetchPort(umi: Umi, asset: PublicKey): Promise<PortAccount
     owner: raw.owner,
     signer: findPortSigner(umi, asset),
     updateAuthority: raw.updateAuthority.type === "Address" ? raw.updateAuthority.address! : raw.updateAuthority.type,
+    collection,
+    collectionAuthority: col?.updateAuthority ?? null,
     strategy,
     agentIdentity: identity ? identityPda : null,
     raw,
@@ -180,7 +214,8 @@ export async function fetchPort(umi: Umi, asset: PublicKey): Promise<PortAccount
 export async function transferPort(umi: Umi, asset: PublicKey, newOwner: PublicKey): Promise<SentTx> {
   const raw = await fetchAsset(umi, asset);
   if (raw.owner !== umi.identity.publicKey) throw new PortError("NOT_AUTHORIZED", "Only the current owner can transfer this PORT.");
-  return send(umi, transfer(umi, { asset: raw, newOwner }));
+  const col = collectionAddress(raw);
+  return send(umi, transfer(umi, { asset: raw, newOwner, ...(col ? { collection: await fetchCollectionV1(umi, col) } : {}) }));
 }
 
 export type MintInfo = { mint: PublicKey; decimals: number; tokenProgram: PublicKey };
