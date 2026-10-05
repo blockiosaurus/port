@@ -16,11 +16,12 @@ import { publicKey, transactionBuilder, type PublicKey, type Signer, type Transa
 import { publicKey as pkSer, string } from "@metaplex-foundation/umi/serializers";
 import { fetchCollectionV1 } from "@metaplex-foundation/mpl-core";
 import {
-  AuthorityType, createIdempotentAssociatedToken, createMint, findAssociatedTokenPda, mintTokensTo, safeFetchMint, safeFetchToken, setAuthority, transferTokens,
+  AuthorityType, createAccount, createIdempotentAssociatedToken, findAssociatedTokenPda, getMintSize, initializeMint2, mintTokensTo, safeFetchMint, safeFetchToken, setAuthority,
+  transferTokens,
 } from "@metaplex-foundation/mpl-toolbox";
 import { captureV1, initEscrowV1, releaseV1, safeFetchEscrowV1 } from "@metaplex-foundation/mpl-hybrid";
 import { PortError } from "./errors";
-import { fetchPort, send, type PortAccount, type SentTx } from "./port";
+import { fetchPort, send, TOKEN_PROGRAM, type PortAccount, type SentTx } from "./port";
 
 export const HYBRID_PROGRAM = publicKey("MPL4o4wMzndgh8T1NVDxELQCj5UQfYTYEkabX3wNKtb");
 /**
@@ -59,14 +60,19 @@ const shareAta = (umi: Pick<Umi, "eddsa" | "programs">, mint: PublicKey, owner: 
 /**
  * One transaction: SPL share mint (6 dp) → hybrid escrow for the collection (terms: full supply
  * per swap, zero project fees, no metadata reroll) → full supply minted to the escrow → mint
- * authority revoked. Must run while the caller is still the collection authority.
+ * authority revoked. Must run while the caller is still the collection authority. The mint is
+ * created with plain System + Token instructions (rent read client-side) so nothing beyond Core,
+ * mpl-hybrid, SPL Token and the ATA program is needed on-chain.
  */
-export function hybridSetupIxs(umi: Umi, i: { collection: PublicKey; shareMint: Signer; name: string; uri: string }) {
+export async function hybridSetupIxs(umi: Umi, i: { collection: PublicKey; shareMint: Signer; name: string; uri: string }): Promise<TransactionBuilder> {
   const creator = umi.identity.publicKey;
   const escrow = findEscrow(umi, i.collection);
   const escrowAta = shareAta(umi, i.shareMint.publicKey, escrow);
+  const space = getMintSize();
+  const lamports = await umi.rpc.getRent(space);
   return transactionBuilder()
-    .add(createMint(umi, { mint: i.shareMint, decimals: SHARE_DECIMALS, mintAuthority: creator, freezeAuthority: null }))
+    .add(createAccount(umi, { newAccount: i.shareMint, lamports, space, programId: TOKEN_PROGRAM }))
+    .add(initializeMint2(umi, { mint: i.shareMint.publicKey, decimals: SHARE_DECIMALS, mintAuthority: creator, freezeAuthority: null }))
     .add(
       initEscrowV1(umi, {
         escrow, collection: i.collection, token: i.shareMint.publicKey, feeLocation: creator,

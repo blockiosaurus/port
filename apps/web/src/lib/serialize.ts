@@ -13,6 +13,7 @@ export function snapshotDto(x: PortSnapshot): SnapshotDto {
       prices: Object.fromEntries(x.prices),
       valuation: x.valuation,
       delegates: x.delegates,
+      shares: x.shares,
       profiles: Object.fromEntries(x.profiles),
       warnings: x.warnings,
       fetchedAt: Date.now(),

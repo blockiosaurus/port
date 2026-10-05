@@ -16,12 +16,19 @@ export type PriceDto = {
 };
 export type BalanceDto = { mint: string; symbol: string; decimals: number; amount: Big; tokenAccount: string; tokenAccountOwner: string | null };
 
+export type SharesDto = { collection: string; escrow: string; mint: string; decimals: number; supply: Big; escrowBalance: Big; tokenized: boolean; sealed: boolean };
+
 export type SnapshotDto = {
-  port: { asset: string; name: string; uri: string; owner: string; signer: string; updateAuthority: string; strategy: PortStrategy; agentIdentity: string | null };
+  port: {
+    asset: string; name: string; uri: string; owner: string; signer: string; updateAuthority: string; collection: string | null; collectionAuthority: string | null;
+    strategy: PortStrategy; agentIdentity: string | null;
+  };
   balances: BalanceDto[];
   prices: Record<string, PriceDto>;
   valuation: { navE8: Big; positions: PositionDto[]; unpriced: string[] };
   delegates: Array<{ record: string; executiveProfile: string; executiveAuthority: string }>;
+  /** mpl-hybrid share escrow; null for PORTs created before share support. */
+  shares: SharesDto | null;
   profiles: Record<string, { decimals: number; uiMultiplierE9: Big; transferFeeBps: number; paused: boolean; permanentDelegate: string | null }>;
   warnings: string[];
   fetchedAt: number;

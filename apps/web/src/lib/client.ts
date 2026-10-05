@@ -5,7 +5,7 @@ import { base64 } from "@metaplex-foundation/umi/serializers";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { createSignerFromWalletAdapter } from "@metaplex-foundation/umi-signer-wallet-adapters";
 import {
-  createPort, delegateExecution, depositToPort, fetchLookupTables, guardedExecute, makeUmi, revokeExecution, transferPort, fetchPort,
+  createPort, delegateExecution, depositToPort, fetchLookupTables, guardedExecute, makeUmi, redeemPort, revokeExecution, shareBalance, tokenizePort, transferPort, transferShares, fetchPort,
   BASE_PROGRAM_ALLOWLIST, type SentTx,
 } from "@port/port-sdk";
 import type { PortActivity } from "@port/shared";
@@ -167,6 +167,18 @@ export async function actionRevoke(umi: Umi, w: Wallet, asset: string, executive
 export async function actionTransfer(umi: Umi, w: Wallet, asset: string, to: string, snapshot: unknown) {
   return record(asset, w, "transfer", await transferPort(umi, publicKey(asset), publicKey(to)), { details: { from: w.signer.publicKey, to, before: snapshot } });
 }
+
+/** Owner locks the PORT in its mpl-hybrid escrow and receives the full share supply. */
+export async function actionTokenize(umi: Umi, w: Wallet, asset: string) {
+  return record(asset, w, "tokenize", await tokenizePort(umi, publicKey(asset)), { details: { from: w.signer.publicKey } });
+}
+/** Holder of the full supply pays it back into escrow and takes the PORT. */
+export async function actionRedeem(umi: Umi, w: Wallet, asset: string) {
+  return record(asset, w, "redeem", await redeemPort(umi, publicKey(asset)), { details: { to: w.signer.publicKey } });
+}
+/** Plain SPL transfer of shares; not a PORT action, so it is not recorded in the activity log. */
+export const sendShares = (umi: Umi, mint: string, to: string, amount: bigint) => transferShares(umi, publicKey(mint), publicKey(to), amount);
+export const myShares = (umi: Umi, mint: string, owner: string) => shareBalance(umi, publicKey(mint), publicKey(owner));
 
 export async function faucet(env: EnvDto, w: Wallet, usdc = 5000) {
   if (!env.faucet) throw new Error("Faucet unavailable on this cluster");

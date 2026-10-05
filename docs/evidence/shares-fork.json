@@ -1,0 +1,51 @@
+{
+  "note": "Recorded from the dashboard on the mainnet fork (2026-10-05): create in a sealed collection, delegate, tokenize into the mpl-hybrid escrow, redeem as Wallet B with the full 1,000,000-share supply. The share transfer between wallets is a plain SPL transfer and is not a PORT action.",
+  "asset": "D9LbfMLhsUftk8yh7yeHLabr4SVwuyu2tzEsaEiqRyDf",
+  "actions": [
+    {
+      "action": "create",
+      "actor": "6GroYMV86UrevpDs6kqx4zXhEg5LKeFP4dZ9JnpxPNRg",
+      "authority": "owner",
+      "signature": "2gSYPyJAyyKZVyirVyX3XT6UK2HAWhWqV5tYmtaDxu8p2y4X1gk2yUpcfk863wa6Dew8xSQKwXfMz9GciMqw1pRV",
+      "status": "confirmed",
+      "timestamp": "2026-10-05T15:00:35.748Z",
+      "details": {
+        "assetSigner": "FFcg75cuNwxdMuW8v4t4YjwXqX2bVNZqrPz8HCHTBvWh",
+        "setup": "opsR2djMSzW7bESd6jF5pD2h4EDmvGKoLdw8giDrAicAWoJuARKMTGtfgqtTZWHhRPeMmVkrcPvR49B4vV4nkx7"
+      }
+    },
+    {
+      "action": "delegate",
+      "actor": "6GroYMV86UrevpDs6kqx4zXhEg5LKeFP4dZ9JnpxPNRg",
+      "authority": "owner",
+      "signature": "3NppJJSMSD9kdaXMBGHeJAiXDJ5u6gQz4uFePyfeqyRhb9hQ1QiB3jHqPuHMwCuCVq4pJZSihXPVfVpWT8X73b5n",
+      "status": "confirmed",
+      "timestamp": "2026-10-05T15:01:01.538Z",
+      "details": {
+        "executive": "HNY1EcvwsKvXSG3mr4Ha3EsANYvy1dS6PpUWL4HQtAxo"
+      }
+    },
+    {
+      "action": "tokenize",
+      "actor": "6GroYMV86UrevpDs6kqx4zXhEg5LKeFP4dZ9JnpxPNRg",
+      "authority": "owner",
+      "signature": "4d43Q4w326KMPaeerBkyKEUZcqRcwvYL6a5fCPWWP6sGLzfRSorSrqPsvs3cyaVXXGEfzT7pN7eMxdyf1LsyQiKN",
+      "status": "confirmed",
+      "timestamp": "2026-10-05T15:01:13.726Z",
+      "details": {
+        "from": "6GroYMV86UrevpDs6kqx4zXhEg5LKeFP4dZ9JnpxPNRg"
+      }
+    },
+    {
+      "action": "redeem",
+      "actor": "FWPdx1rKMLYwpkkFs2k7zqkwCEd8dAjmJn67ziweDjzb",
+      "authority": "owner",
+      "signature": "dQamhCFhvokV29v2tVyVdxUgAzHhdpJi99omBHyrzXoh1S8CnVbLNNpBKSUDX8o47QP2tBrtshxDqNn6ys4XA5v",
+      "status": "confirmed",
+      "timestamp": "2026-10-05T15:02:23.026Z",
+      "details": {
+        "to": "FWPdx1rKMLYwpkkFs2k7zqkwCEd8dAjmJn67ziweDjzb"
+      }
+    }
+  ]
+}

@@ -1,6 +1,13 @@
 # Tokenize a PORT with mpl-hybrid (PORT shares)
 
-**Status:** approved design, 2026-10-05.
+**Status:** approved design, 2026-10-05. **Implementation note:** the published client
+(`@metaplex-foundation/mpl-hybrid@0.2.0`) only ships the V1 escrow (`EscrowV1`, keyed
+`["escrow", collection]`, with the swap terms on the escrow itself), not the V2 escrow + recipe
+described below. V1 has the same authority rule (`initEscrowV1`/`updateEscrowV1` need the
+collection authority's signature), so the design holds with "recipe" read as "the escrow's own
+terms" and one escrow per PORT instead of one per creator. The deployed program checks the V1
+swap's protocol fee wallet against `C3iy…` (the client defaults to the older `GjF4…`); the SDK
+defaults to the former and retries once with whatever wallet Anchor's constraint log names.
 
 ## Goal
 

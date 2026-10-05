@@ -23,6 +23,8 @@
   --signer-soft: #d3ebe5;
   --agent: #a16207;
   --agent-soft: #f2e4c3;
+  --escrow: #6d28d9;
+  --escrow-soft: #e6ddf7;
   --pass: #15803d;
   --fail: #b91c1c;
   --fail-soft: #f7d9d4;
@@ -47,6 +49,8 @@
     --signer-soft: #10302b;
     --agent: #e8b64c;
     --agent-soft: #33280f;
+    --escrow: #b79cf0;
+    --escrow-soft: #2a1d45;
     --pass: #4ade80;
     --fail: #f87171;
     --fail-soft: #3a1717;
@@ -70,6 +74,7 @@
   --color-signer: var(--signer);
   --color-signer-soft: var(--signer-soft);
   --color-agent: var(--agent);
+  --color-escrow: var(--escrow);
   --color-agent-soft: var(--agent-soft);
   --color-pass: var(--pass);
   --color-fail: var(--fail);
@@ -151,6 +156,11 @@ body {
   background: var(--agent);
   border-color: var(--agent);
   color: #fffaf0;
+}
+.btn-escrow {
+  background: var(--escrow);
+  border-color: var(--escrow);
+  color: #f7f2ff;
 }
 
 .input {

@@ -6,13 +6,14 @@ import { explorer, short } from "@/lib/format";
 import type { Wallet } from "@/lib/client";
 import { WalletButton } from "@/lib/wallet";
 
-export type IdentityKind = "wallet" | "owner" | "signer" | "agent";
+export type IdentityKind = "wallet" | "owner" | "signer" | "agent" | "escrow";
 
 const ID_META: Record<IdentityKind, { label: string; color: string; soft: string; glyph: string; help: string }> = {
   wallet: { label: "Connected wallet", color: "var(--wallet)", soft: "color-mix(in oklab, var(--wallet) 12%, var(--card))", glyph: "◉", help: "The browser wallet signing right now." },
   owner: { label: "Core owner", color: "var(--owner)", soft: "var(--owner-soft)", glyph: "◆", help: "Owns the PORT Core asset. Moves on transfer." },
   signer: { label: "Asset Signer", color: "var(--signer)", soft: "var(--signer-soft)", glyph: "⬢", help: "PDA derived from the asset. Holds every position. Never moves." },
   agent: { label: "Agent executive", color: "var(--agent)", soft: "var(--agent-soft)", glyph: "✦", help: "May Execute under delegation, within policy. Revocable." },
+  escrow: { label: "Hybrid escrow", color: "var(--escrow)", soft: "var(--escrow-soft)", glyph: "▣", help: "mpl-hybrid escrow PDA. Owns the PORT while it is tokenized; only the full share supply can take it back. Can sign nothing but that swap." },
 };
 
 export function IdentityChip({ kind, address, env, compact }: { kind: IdentityKind; address: string | null; env?: { cluster: string; rpcUrl: string }; compact?: boolean }) {

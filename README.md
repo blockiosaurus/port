@@ -1,6 +1,6 @@
 # PORT: an investment account you can own
 
-**PORT is a Metaplex Core asset whose deterministic Asset Signer holds a portfolio of pre-IPO PreStocks. Every trade is signed through Core Execute, a bounded agent can run it under revocable delegation, and selling the account is one Core transfer: the stocks never move, only the ownership does.**
+**PORT is a Metaplex Core asset whose deterministic Asset Signer holds a portfolio of pre-IPO PreStocks. Every trade is signed through Core Execute, a bounded agent can run it under revocable delegation, selling the account is one Core transfer, and tokenizing it is one mpl-hybrid swap: the stocks never move, only the ownership does.**
 
 > **Try it live:** **[ownport.xyz](https://ownport.xyz)** (a hosted fork of mainnet: real programs and PreStocks pools, no real funds; pick a burner wallet in the header, hit **Faucet**, and follow the steps below). Hosting notes: [`docs/deploy-droplet.md`](docs/deploy-droplet.md).
 >
@@ -17,6 +17,7 @@
 5. **Delegate**, then **Run agent**: the agent completes the mandate under delegated Execute.
 6. **Transfer PORT** to Wallet B and read the before/after proof: same Asset Signer, same balances, new owner.
 7. **As Wallet B**: trade, then revoke the delegation you inherited.
+8. **Tokenize**: lock the PORT in its mpl-hybrid escrow and receive the full 1,000,000-share supply. Delegate first and the agent keeps running; nobody can touch the mandate. **Send shares** to Wallet A, then, as A, **Redeem** to take the account back out.
 
 Repeated buys of the same name on one fork eventually trip the on-chain min-out check, because Jupiter quotes mainnet pools while trades move the cloned ones. That rejection is correct; try another name or a smaller size.
 
@@ -35,11 +36,12 @@ PORT turns the account itself into an ownable Solana object:
 | **Mandate** | Target weights and risk limits are stored on the asset in an **owner-managed Attributes plugin**. The mandate travels with the account, and only the current owner can change it. |
 | **Automation** | A deterministic agent plans the smallest rebalance back within tolerance. It executes only trades that pass every Pyth-backed policy check, signing as a registered executive through delegated Execute. |
 | **Transfer** | One Core `transfer` hands over every position, the mandate, the agent registration and the history. The Asset Signer address and all balances stay the same. |
-| **No lingering creator control** | Update authority is **renounced** at creation. After a sale, the original creator can't edit the asset. |
+| **Tokenize** | Every PORT is minted inside its own one-asset collection with an **mpl-hybrid** escrow. `releaseV1` locks the account for a fixed 1,000,000-share supply; `captureV1` with the full supply redeems it. While escrowed the agent's delegation still works, nothing else does. |
+| **No lingering creator control** | The asset's update authority is its collection, and the collection's authority is handed to the **System Program** once the escrow is set up. Nobody can edit the asset, and `updateEscrowV1` (which needs that signature) can never change the share terms or fees. |
 
 ### Why this needs Solana and Core Execute
 
-Core Execute gives every Core asset a program-derived signer that only the asset's owner (or its registered delegate) can drive. That's what makes an ownable, transferable account possible without writing a custom custody program. PORT deploys **no bespoke on-chain program**: custody, authorization and delegation are Metaplex Core and MPL Agent Tools; trading is Jupiter into the live PreStocks pools.
+Core Execute gives every Core asset a program-derived signer that only the asset's owner (or its registered delegate) can drive. That's what makes an ownable, transferable account possible without writing a custom custody program. PORT deploys **no bespoke on-chain program**: custody, authorization and delegation are Metaplex Core and MPL Agent Tools; tokenization is mpl-hybrid (MPL-404); trading is Jupiter into the live PreStocks pools.
 
 ## Architecture
 
@@ -65,7 +67,8 @@ flowchart TD
 packages/
   shared/        Types, zod schemas, fixed-point helpers, disclaimer
   risk-engine/   Valuation, drift, bounded rebalance planner, every policy check (pure)
-  port-sdk/      createPort, fetchPort, balances, deposit, guarded Core Execute, delegation, transfer
+  port-sdk/      createPort, fetchPort, balances, deposit, guarded Core Execute, delegation, transfer,
+                 hybrid.ts: tokenize (releaseV1) / redeem (captureV1) through the per-PORT mpl-hybrid escrow
   integrations/  Jupiter (validated routes), PreStocks, Pyth, pricing, agent orchestration,
                  Meteora DBC agent market, ClawPump client, activity store
 apps/web/        Next.js dashboard + API routes (agent key stays server-side) — see apps/web/README.md
@@ -79,12 +82,14 @@ scripts/         localnet, mainnet-fork demo environment, bootstrap, verify, age
 | **Core owner** | vermilion ◆ | Execute any allowlisted instruction as the Asset Signer; delegate/revoke; edit the mandate; transfer the PORT | — |
 | **Asset Signer** | verdigris ⬢ | Hold every position; sign only by CPI from Core Execute | Sign on its own; move on transfer |
 | **Agent executive** | ochre ✦ | Execute through the delegate record, and only trades the policy approved (enforced by the agent) | Transfer the PORT, change the mandate, delegate, or act after revocation (enforced on-chain) |
+| **Hybrid escrow** | violet ▣ | Own the PORT while it is tokenized; sign the Core transfer back to whoever pays in the full share supply | Execute, delegate, change the mandate, or release the PORT for anything less than every share |
 | **Connected wallet** | ink ◉ | Whatever its role above allows; owner actions are disabled in the UI when it isn't the owner | — |
 
-Proven on-chain against the real programs (`packages/port-sdk/test/lifecycle.int.test.ts`, 8 tests):
+Proven on-chain against the real programs (`packages/port-sdk/test/lifecycle.int.test.ts`, 10 tests):
 - A stranger's Execute is rejected by Core (`0x1a`), and so is an old owner's after a transfer. The new owner's Execute succeeds.
 - A delegate can Execute only when it presents its record, and can't after revocation.
 - **Delegations persist across a Core transfer.** Records don't store who granted them, so a new owner inherits every live delegate. The dashboard shows an "inherited execution delegate" warning with a one-click revoke, and the transfer screen says so before you sign.
+- **Tokenized means frozen, except for the agent.** Once the escrow owns the PORT the owner's Execute is rejected, the delegate's still succeeds, redeeming with less than the full supply is refused, and the holder of every share ends up as the Core owner with the escrow refilled.
 
 Client-side guards on every Execute (`port-sdk/src/execute.ts`, `integrations/src/jupiter.ts`):
 - **Program allowlist:** SPL Token, Token-2022, Associated Token, System, Jupiter v6.

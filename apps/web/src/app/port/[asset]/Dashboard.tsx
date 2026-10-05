@@ -3,10 +3,11 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import type { PortActivity } from "@port/shared";
 import { DISCLAIMER } from "@port/shared";
 import {
-  actionDelegate, actionDeposit, actionRevoke, actionTrade, actionTransfer, api, faucet, rememberPort, umiFor, useWallets, type Wallet,
+  actionDelegate, actionDeposit, actionRedeem, actionRevoke, actionTokenize, actionTrade, actionTransfer, api, faucet, myShares, rememberPort, sendShares, umiFor, useWallets,
+  type Wallet,
 } from "@/lib/client";
 import type { PortViewDto, ProposalDto, SnapshotDto, TradeDto } from "@/lib/dto";
-import { pct, short, units, usd } from "@/lib/format";
+import { explorer, pct, short, units, usd } from "@/lib/format";
 import { Banner, Checks, IdentityChip, Modal, Seal, Shell, TxLink } from "@/components/ui";
 import { AgentMarket } from "@/components/AgentMarket";
 
@@ -23,7 +24,10 @@ export default function Dashboard({ asset }: { asset: string }) {
   const [depositOpen, setDepositOpen] = useState(false);
   const [transferOpen, setTransferOpen] = useState(false);
   const [tradeOpen, setTradeOpen] = useState(false);
+  const [sharesOpen, setSharesOpen] = useState(false);
   const [proof, setProof] = useState<TransferProof | null>(null);
+  /** Shares held by (wallet, mint), read client-side; `held` is null until the read for the current pair lands. */
+  const [heldFor, setHeldFor] = useState<{ key: string; amount: bigint } | null>(null);
 
   const refresh = useCallback(
     () =>
@@ -80,6 +84,22 @@ export default function Dashboard({ asset }: { asset: string }) {
 
   const umi = env && active ? umiFor(env.rpcUrl, active) : null;
   const other = wallets.find((w) => w.signer.publicKey !== active?.signer.publicKey);
+
+  const shareMint = snap?.shares?.mint ?? null;
+  const activeKey = active?.signer.publicKey ?? null;
+  const rpcUrl = env?.rpcUrl ?? null;
+  const fetchedAt = snap?.fetchedAt ?? 0;
+  const heldKey = activeKey && shareMint ? `${activeKey}:${shareMint}` : null;
+  useEffect(() => {
+    if (!rpcUrl || !active || !shareMint || !activeKey || !heldKey) return;
+    let live = true;
+    myShares(umiFor(rpcUrl, active), shareMint, activeKey).then((amount) => live && setHeldFor({ key: heldKey, amount }), () => {});
+    return () => {
+      live = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rpcUrl, activeKey, shareMint, heldKey, fetchedAt]);
+  const held = heldFor && heldFor.key === heldKey ? heldFor.amount : null;
 
   return (
     <Shell
@@ -154,7 +174,21 @@ export default function Dashboard({ asset }: { asset: string }) {
 
           <div className="mt-6 grid gap-6 lg:grid-cols-[1.65fr_1fr]">
             <Pricing snap={snap} />
-            <Mandate snap={snap} />
+            <div className="grid gap-6">
+              <Mandate snap={snap} />
+              <Shares
+                snap={snap}
+                env={env}
+                isOwner={isOwner}
+                busy={busy}
+                held={held}
+                onTokenize={() =>
+                  run("tokenize", () => actionTokenize(umi!, active!, asset), (t) => ({ text: "PORT locked in its hybrid escrow; the full share supply is in your wallet.", sig: t.signature }))
+                }
+                onSend={() => setSharesOpen(true)}
+                onRedeem={() => run("redeem", () => actionRedeem(umi!, active!, asset), (t) => ({ text: "Shares paid back into escrow; you own the PORT.", sig: t.signature }))}
+              />
+            </div>
           </div>
 
           <Activity activity={view.activity} env={env} snap={snap} />
@@ -192,6 +226,20 @@ export default function Dashboard({ asset }: { asset: string }) {
         />
       </Modal>
 
+      <Modal open={sharesOpen} onClose={() => setSharesOpen(false)} title="Send shares">
+        {snap?.shares && active && held !== null && (
+          <SendSharesForm
+            shares={snap.shares}
+            held={held}
+            suggested={other}
+            busy={busy === "send-shares"}
+            onSubmit={(to, amount) => {
+              setSharesOpen(false);
+              void run("send-shares", () => sendShares(umi!, snap.shares!.mint, to, amount), (t) => ({ text: `Sent ${units(amount, snap.shares!.decimals, 0)} shares to ${short(to, 4)}.`, sig: t.signature }));
+            }}
+          />
+        )}
+      </Modal>
       <Modal open={tradeOpen} onClose={() => setTradeOpen(false)} title="Place a trade">
         {snap && (
           <TradeForm
@@ -266,7 +314,15 @@ function Deed({ snap, env, active, isOwner, busy, onDeposit, onRebalance, onTrad
               asset {short(snap.port.asset, 6)} ↗
             </a>
             <span>·</span>
-            <span title="Update authority renounced at creation: the original creator keeps no control after a sale.">update authority: {snap.port.updateAuthority === "None" ? "none (sealed)" : short(snap.port.updateAuthority)}</span>
+            <span
+              title={
+                snap.port.collection
+                  ? "The asset's update authority is its own one-asset collection, whose authority was handed to the System Program once the share escrow was set up. Nobody can change the asset, the escrow terms or the fees."
+                  : "Update authority renounced at creation: the original creator keeps no control after a sale."
+              }
+            >
+              update authority: {snap.port.collection ? "collection (sealed)" : snap.port.updateAuthority === "None" ? "none (sealed)" : short(snap.port.updateAuthority)}
+            </span>
             <span>·</span>
             <span>agent identity {snap.port.agentIdentity ? "registered" : "missing"}</span>
           </div>
@@ -275,8 +331,12 @@ function Deed({ snap, env, active, isOwner, busy, onDeposit, onRebalance, onTrad
             <div>
               <dt className="eyebrow mb-1.5">Owned by</dt>
               <dd className="flex flex-wrap items-center gap-2">
-                <IdentityChip kind="owner" address={snap.port.owner} env={env} />
-                {active && (isOwner ? <span className="text-[12px] font-semibold text-owner">that’s you</span> : <span className="text-[12px] text-ink-3">not the connected wallet</span>)}
+                <IdentityChip kind={snap.shares?.tokenized ? "escrow" : "owner"} address={snap.port.owner} env={env} />
+                {snap.shares?.tokenized ? (
+                  <span className="text-[12px] text-ink-3">tokenized: redeem with every share</span>
+                ) : (
+                  active && (isOwner ? <span className="text-[12px] font-semibold text-owner">that’s you</span> : <span className="text-[12px] text-ink-3">not the connected wallet</span>)
+                )}
               </dd>
             </div>
             <div>
@@ -322,7 +382,13 @@ function Deed({ snap, env, active, isOwner, busy, onDeposit, onRebalance, onTrad
         <button className="btn btn-owner" disabled={!isOwner || !!busy} onClick={onTransfer}>
           Transfer PORT →
         </button>
-        {!isOwner && <span className="w-full text-[12px] text-ink-3">Owner actions are disabled: the connected wallet does not own this PORT. Execute would be rejected on-chain.</span>}
+        {!isOwner && (
+          <span className="w-full text-[12px] text-ink-3">
+            {snap.shares?.tokenized
+              ? "Owner actions are disabled: the hybrid escrow owns this PORT. Only the agent's delegation can Execute until someone redeems."
+              : "Owner actions are disabled: the connected wallet does not own this PORT. Execute would be rejected on-chain."}
+          </span>
+        )}
       </div>
     </section>
   );
@@ -498,6 +564,112 @@ function Mandate({ snap }: { snap: SnapshotDto }) {
   );
 }
 
+/* -------------------------------------------------------------- shares */
+
+function Shares({ snap, env, isOwner, busy, held, onTokenize, onSend, onRedeem }: {
+  snap: SnapshotDto; env: Env; isOwner: boolean; busy: string | null; held: bigint | null; onTokenize: () => void; onSend: () => void; onRedeem: () => void;
+}) {
+  const s = snap.shares;
+  if (!s)
+    return (
+      <section className="card p-5 sm:p-6">
+        <h2 className="font-display text-3xl">Shares</h2>
+        <p className="mt-2 text-[13px] text-ink-3">Created before share support: this PORT has no hybrid escrow and cannot be tokenized.</p>
+      </section>
+    );
+  const supply = BigInt(s.supply);
+  const holdsAll = held !== null && held >= supply;
+  return (
+    <section className="card relative overflow-hidden p-5 sm:p-6">
+      <div aria-hidden className="absolute inset-x-0 top-0 h-1" style={{ background: "var(--escrow)" }} />
+      <div className="flex items-baseline justify-between">
+        <h2 className="font-display text-3xl">Shares</h2>
+        <span className="font-mono text-[11px]" style={{ color: s.tokenized ? "var(--escrow)" : "var(--ink-3)" }}>
+          {s.tokenized ? "● tokenized" : "○ held by owner"}
+        </span>
+      </div>
+      <p className="mt-2 text-[13px] leading-relaxed text-ink-2">
+        One mpl-hybrid escrow per PORT. <b>Tokenize</b> locks the account in escrow for the full supply of {units(s.supply, s.decimals, 0)} shares; whoever collects every share can{" "}
+        <b>redeem</b> it. While tokenized nobody can trade manually, edit the mandate or delegate; the agent keeps running under its delegation. The terms are sealed: the collection
+        authority was handed to the System Program.
+      </p>
+      <dl className="mt-4 grid grid-cols-2 gap-x-3 gap-y-3 text-[13px]">
+        <div>
+          <dt className="eyebrow mb-1">Escrow</dt>
+          <dd>
+            <IdentityChip kind="escrow" address={s.escrow} env={env} compact />
+          </dd>
+        </div>
+        <div>
+          <dt className="eyebrow mb-1">Share mint</dt>
+          <dd>
+            <a className="font-mono text-[12px] hover:underline" href={explorer("address", s.mint, env.cluster, env.rpcUrl)} target="_blank" rel="noreferrer">
+              {short(s.mint, 6)} ↗
+            </a>
+          </dd>
+        </div>
+        <div>
+          <dt className="eyebrow mb-1">In escrow</dt>
+          <dd className="num font-mono">{units(s.escrowBalance, s.decimals, 0)}</dd>
+        </div>
+        <div>
+          <dt className="eyebrow mb-1">Connected wallet holds</dt>
+          <dd className="num font-mono">{held === null ? "—" : units(held, s.decimals, 0)}</dd>
+        </div>
+      </dl>
+      <div className="mt-5 flex flex-wrap gap-2">
+        {!s.tokenized && (
+          <button className="btn btn-escrow" disabled={!isOwner || !!busy} onClick={onTokenize} title={isOwner ? "" : "Only the owner can tokenize"}>
+            {busy === "tokenize" ? "Tokenizing…" : "Tokenize"}
+          </button>
+        )}
+        {s.tokenized && (
+          <button className="btn btn-escrow" disabled={!holdsAll || !!busy} onClick={onRedeem} title={holdsAll ? "" : "Needs the full share supply"}>
+            {busy === "redeem" ? "Redeeming…" : "Redeem PORT"}
+          </button>
+        )}
+        <button className="btn btn-ghost" disabled={held === null || held === 0n || !!busy} onClick={onSend}>
+          Send shares…
+        </button>
+      </div>
+      {s.tokenized && !holdsAll && held !== null && held > 0n && (
+        <p className="mt-2 text-[11px] text-ink-3">Partial holdings carry no rights: the escrow releases the PORT only against the full supply.</p>
+      )}
+    </section>
+  );
+}
+
+function SendSharesForm({ shares, held, suggested, busy, onSubmit }: {
+  shares: NonNullable<SnapshotDto["shares"]>; held: bigint; suggested?: Wallet; busy: boolean; onSubmit: (to: string, amount: bigint) => void;
+}) {
+  const [to, setTo] = useState(suggested?.signer.publicKey ?? "");
+  const [amount, setAmount] = useState(units(held, shares.decimals, 0).replace(/,/g, ""));
+  const raw = /^\d+$/.test(amount) ? BigInt(amount) * 10n ** BigInt(shares.decimals) : 0n;
+  const valid = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(to) && raw > 0n && raw <= held;
+  return (
+    <form
+      onSubmit={(e) => {
+        e.preventDefault();
+        if (valid) onSubmit(to, raw);
+      }}
+    >
+      <p className="text-[13px] text-ink-2">A plain SPL transfer of shares. Only a wallet holding the full supply of {units(shares.supply, shares.decimals, 0)} can redeem the PORT.</p>
+      <label className="eyebrow mt-4 block">To</label>
+      <input className="input mt-1" value={to} onChange={(e) => setTo(e.target.value.trim())} placeholder="recipient address" />
+      {suggested && to !== suggested.signer.publicKey && (
+        <button type="button" className="mt-1 text-[12px] text-wallet underline" onClick={() => setTo(suggested.signer.publicKey)}>
+          use {suggested.label}
+        </button>
+      )}
+      <label className="eyebrow mt-4 block">Shares</label>
+      <input className="input mt-1" inputMode="numeric" value={amount} onChange={(e) => setAmount(e.target.value.replace(/[^\d]/g, ""))} />
+      <button className="btn btn-escrow mt-4 w-full" disabled={busy || !valid}>
+        {busy ? "Sending…" : "Send shares"}
+      </button>
+    </form>
+  );
+}
+
 /* --------------------------------------------------------------- agent */
 
 function AgentPanel({ snap, env, isOwner, agentDelegated, busy, onDelegate, onRevoke, onRun }: {
@@ -553,6 +725,7 @@ function AgentPanel({ snap, env, isOwner, agentDelegated, busy, onDelegate, onRe
 
 const ACTION_VERB: Record<PortActivity["action"], string> = {
   create: "Created PORT", deposit: "Deposited", trade: "Traded", delegate: "Delegated execution", revoke: "Revoked delegation", transfer: "Transferred PORT",
+  tokenize: "Tokenized PORT into its hybrid escrow", redeem: "Redeemed PORT with the full share supply",
 };
 
 function Activity({ activity, env, snap }: { activity: PortActivity[]; env: Env; snap: SnapshotDto }) {

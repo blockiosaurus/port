@@ -12,7 +12,7 @@ src/
     page.tsx             landing: thesis, mandate preview, create PORT, open a PORT
     port/[asset]/
       page.tsx           server component: awaits params, renders the client dashboard
-      Dashboard.tsx      the whole dashboard (deed, positions, prices, mandate, agent, activity, modals)
+      Dashboard.tsx      the whole dashboard (deed, positions, prices, mandate, shares, agent, activity, modals)
     api/                 route handlers (Node runtime) — see "Server" below
   components/
     ui.tsx               IdentityChip, IdentityLegend, Seal, Checks, TxLink, Banner, Modal, Shell
@@ -29,7 +29,7 @@ src/
 
 ## The one idea the UI has to carry
 
-A PORT has four identities and they must never be confused. Each has a fixed colour, glyph and
+A PORT has five identities and they must never be confused. Each has a fixed colour, glyph and
 tooltip, used everywhere (header, deed, activity rows, transfer proof):
 
 | Identity | Colour | Glyph | Meaning |
@@ -38,6 +38,7 @@ tooltip, used everywhere (header, deed, activity rows, transfer proof):
 | Core owner | vermilion | ◆ | owns the Core asset; moves on transfer |
 | Asset Signer | verdigris | ⬢ | the PDA that holds every position; never moves |
 | Agent executive | ochre | ✦ | may Execute under a revocable delegation |
+| Hybrid escrow | violet | ▣ | mpl-hybrid PDA that owns the PORT while it is tokenized; only the full share supply gets it back |
 
 `IdentityChip` is the only way an address is ever rendered, so the colour is always attached to the
 role. The Asset Signer additionally gets `Seal`, an engraved SVG stamp with its address set around

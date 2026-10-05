@@ -175,7 +175,7 @@ export async function completePortSetup(
   ]);
   if (!escrow) {
     if (!input.shareMint) throw new PortError("TX_FAILED", "A share mint signer is required to initialise the share escrow.");
-    await send(umi, hybridSetupIxs(umi, { collection, shareMint: input.shareMint, name: raw.name, uri: raw.uri }));
+    await send(umi, await hybridSetupIxs(umi, { collection, shareMint: input.shareMint, name: raw.name, uri: raw.uri }));
   }
   let b = transactionBuilder();
   if (!identity) b = b.add(registerIdentityV1(umi, { asset, collection, agentRegistrationUri: input.agentRegistrationUri }));
