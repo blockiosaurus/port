@@ -16,8 +16,11 @@ import { createHash } from "node:crypto";
 import { existsSync, readFileSync } from "node:fs";
 import { mkdir, writeFile } from "node:fs/promises";
 
-const INPUT = process.env.DEMO_INPUT ?? "docs/demo/port-demo.mp4";
-const OUTPUT = process.env.DEMO_OUTPUT ?? "docs/demo/port-demo-narrated.mp4"; // rename over port-demo.mp4 once approved
+/** Which video: "main" (docs/demo/port-demo.mp4) or "shares" (docs/demo/port-shares.mp4). */
+const DEMO = (process.env.DEMO ?? "main") as "main" | "shares";
+const BASE = DEMO === "main" ? "docs/demo/port-demo" : "docs/demo/port-shares";
+const INPUT = process.env.DEMO_INPUT ?? `${BASE}.mp4`;
+const OUTPUT = process.env.DEMO_OUTPUT ?? `${BASE}-narrated.mp4`; // rename over the input once approved
 const CACHE = ".demo/narration";
 const VOICE = process.env.ELEVENLABS_VOICE_ID ?? "jTm8RvtbGj4ihx7YyqdV"; // "Christopher - Narrator & Host"
 const MODEL = "eleven_multilingual_v2";
@@ -25,7 +28,7 @@ const GAP = 0.35; // seconds between consecutive clips when the previous one ove
 
 /** `after` anchors a line to the caption with that title; `at` is seconds; lines with neither follow the previous line. */
 type Cue = { at?: number; after?: string; text: string };
-const CUES: Cue[] = [
+const MAIN_CUES: Cue[] = [
   { after: "PORT", text: "This is PORT. An investment account you can actually own." },
   { after: "The thesis", text: "A brokerage account bundles custody, positions and automation, and the broker owns all of it. PORT makes that bundle one object on Solana: a Metaplex Core asset. This runs on a fork of mainnet: real programs, real PreStocks pools, no real money." },
   { text: "The verdigris seal is the Asset Signer, a program-derived account that holds every position. The mandate lives on the asset itself, and an escrow already holds a million shares of it. The owner deposits USDC that only Core Execute can move." },
@@ -44,7 +47,23 @@ const CUES: Cue[] = [
   { after: "The stocks never moved.", text: "The stocks never moved. Ownership did. That's PORT." },
 ];
 
-const CAPTIONS = ".demo/video/captions.json";
+const SHARES_CUES: Cue[] = [
+  { after: "Tokenize your PORT", text: "A PORT update. Every PORT now carries an mpl-hybrid share escrow, so the whole account can be tokenized." },
+  { after: "Set up a PORT", text: "First, a funded account. Wallet A mints a PORT, deposits USDC, buys some Anthropic through Core Execute, and delegates execution to the agent." },
+  { after: "A funded PORT", text: "Three identities. Wallet A is the Core owner. The Asset Signer holds the positions. The agent may execute under a revocable delegation." },
+  { after: "Every PORT ships with a share escrow", text: "Here's what's new. The PORT was minted into its own collection with an mpl-hybrid escrow that already holds one million shares. The collection authority went to the System Program, so the terms can never change: no fee edits, no cheaper redemption, no backdoor." },
+  { after: "Tokenize", text: "Tokenize is one swap. The PORT goes into escrow and the full supply comes out to the owner." },
+  { after: "The escrow owns the deed", text: "The escrow is the Core owner now, and Wallet A holds a million shares. Owner actions are disabled; the escrow can sign nothing except the swap back." },
+  { after: "The agent keeps running", text: "But the agent's delegation survived. Run it, and it plans the rebalance for the shareholders and runs every policy check. Trades go through only when all of them pass, under a mandate nobody can change." },
+  { after: "Shares are plain SPL tokens", text: "The shares are ordinary SPL tokens. Wallet A sends all of them to Wallet B; anything short of the full supply carries no rights." },
+  { after: "Wallet B redeems", text: "Holding every share, Wallet B pays them back into escrow and takes the whole account out." },
+  { after: "Same account, new owner", text: "Same Asset Signer, same positions, same mandate, same agent. Only the owner changed, and the escrow holds the supply again, ready for the next tokenize." },
+  { after: "Verified on-chain", text: "Both swaps are in the history, recorded only after they confirmed on chain." },
+  { after: "Collect every share, own the account.", text: "Collect every share, own the account. PORT shares, built on mpl-hybrid." },
+];
+const CUES = DEMO === "main" ? MAIN_CUES : SHARES_CUES;
+
+const CAPTIONS = `.demo/video/${DEMO}/captions.json`;
 function anchorOf(cue: Cue): number | undefined {
   if (cue.at !== undefined) return cue.at;
   if (!cue.after) return undefined;
