@@ -11,12 +11,12 @@ import { APP, record } from "./lib/recorder";
 record("shares", "docs/demo/port-shares.mp4", async ({ page, caption, card, uncard, hold, waitFor, btn, text }) => {
   await page.goto(APP);
   await page.waitForLoadState("networkidle");
-  await card("Tokenize your PORT", "An update: every PORT now carries an mpl-hybrid (MPL-404) share escrow.<br/><span style='font-size:19px;color:#8a8373'>Lock the whole account for 1,000,000 shares. Collect every share to take it back.</span>");
+  await card("Tokenize your PORT", "Turn one account into a million fungible shares, and back.<br/><span style='font-size:19px;color:#8a8373'>PORT update · mpl-hybrid (MPL-404)</span>");
   await hold(5);
   await uncard();
 
-  // A funded, delegated PORT (same path as the main demo, compressed).
-  await caption("Set up a PORT", "Wallet A mints a PORT, deposits 2,500 USDC into the Asset Signer, buys $700 of ANTHROPIC through Core Execute and delegates execution to the agent.");
+  // A funded, delegated PORT (same path as the main demo, compressed) while the problem is stated.
+  await caption("An account is all-or-nothing", "A PORT is one asset. You can sell the whole thing or nothing: nobody can own a piece of it, a piece has no price, and the only buyer is someone who wants all of it.");
   await btn("Faucet").click();
   await hold(3);
   await btn("Create PORT").click();
@@ -34,42 +34,42 @@ record("shares", "docs/demo/port-shares.mp4", async ({ page, caption, card, unca
   await btn("Delegate execution to agent").click();
   await waitFor(text(/Agent executive may now Execute/));
   await page.evaluate(() => window.scrollTo({ top: 0, behavior: "smooth" }));
-  await caption("A funded PORT", "Vermilion = Wallet A, the <b>Core owner</b>. The verdigris <b>Asset Signer</b> holds the positions. The ochre <b>agent</b> may Execute under a revocable delegation.");
+  await caption("A managed account worth $2,500", "Wallet A owns it. The Asset Signer holds USDC and ANTHROPIC. An agent runs the mandate under a revocable delegation. Now make it divisible.");
   await hold(7);
 
-  // The share escrow
+  // Why: fractional ownership with a hard redemption floor
   await page.getByRole("heading", { name: "Shares" }).scrollIntoViewIfNeeded();
-  await caption("Every PORT ships with a share escrow", "Minted into its own one-asset collection with an mpl-hybrid escrow that already holds 1,000,000 shares. The collection authority was handed to the System Program: the terms can never change.");
-  await hold(12);
+  await caption("Fractional ownership, built in", "Every PORT ships with an mpl-hybrid escrow holding 1,000,000 shares. Shares are plain SPL tokens: send them, sell them, pool them, post them as collateral. The full supply always redeems the account, so one share is anchored to one millionth of NAV.");
+  await hold(20);
 
   // Tokenize
-  await caption("Tokenize", "One releaseV1 swap: the PORT goes into escrow, the full supply comes out to the owner.");
-  await hold(4);
+  await caption("One swap turns the account into shares", "No wrapper contract, no new program: mpl-hybrid releaseV1 moves the PORT into escrow and the full supply out to the owner.");
+  await hold(6);
   await btn("Tokenize").click();
   await waitFor(text(/PORT locked in its hybrid escrow/));
   await page.evaluate(() => window.scrollTo({ top: 0, behavior: "smooth" }));
-  await caption("The escrow owns the deed", "Violet = the <b>Hybrid escrow</b>, now the Core owner. Wallet A holds 1,000,000 shares. Owner actions are disabled: Core rejects anyone but the owner, and the escrow signs nothing but the swap back.");
-  await hold(10);
+  await caption("A program holds it, not a custodian", "The escrow is a PDA with sealed terms: it cannot change the fee, lower the redemption price or hand the account to anyone who doesn't bring every share. Nobody can touch the mandate while the account is split.");
+  await hold(15);
 
-  // The agent still runs
-  await caption("The agent keeps running", "The delegation survived the transfer into escrow. Run it: it plans the rebalance for the shareholders and runs every policy check; trades execute through delegated Core Execute only when all of them pass. Nobody can change the mandate it follows.");
+  // Why: a fund unit, not a frozen asset
+  await caption("A fund share, not a frozen asset", "The agent's delegation survived the move into escrow. It keeps planning rebalances and running every policy check for the shareholders, so they own a managed account, not a snapshot of one.");
   await btn("Run agent").scrollIntoViewIfNeeded();
   await btn("Run agent").click();
   await waitFor(text(/Agent executed \d trade/), 300_000);
-  await hold(9);
+  await hold(12);
   await page.getByRole("button", { name: "Close" }).click();
 
-  // Shares move
+  // Why: liquidity
   await page.getByRole("heading", { name: "Shares" }).scrollIntoViewIfNeeded();
-  await caption("Shares are plain SPL tokens", "Wallet A sends all 1,000,000 shares to Wallet B. Any share count below the full supply carries no rights.");
-  await hold(5);
+  await caption("Liquidity", "Shares move like any token: to a wallet, a DEX pool, a lending market. Price discovery happens on the shares, not on an illiquid whole. Here, all of them go to Wallet B.");
+  await hold(12);
   await btn(/Send shares/).click();
   await page.getByRole("dialog").getByRole("button", { name: "Send shares", exact: true }).click();
   await waitFor(text(/Sent 1,000,000 shares/));
   await hold(2);
 
-  // Redeem
-  await caption("Wallet B redeems", "Holding every share, Wallet B pays them back into escrow with one captureV1 swap and takes the whole account out.");
+  // Redeem: whole again
+  await caption("Whole again when someone wants it whole", "Whoever gathers the full supply can redeem: Wallet B pays the shares back into escrow and takes the account out intact.");
   await page.getByRole("tablist", { name: "Acting wallet" }).getByRole("tab").nth(1).click(); // Wallet B
   await hold(2);
   await btn("Faucet").click();
@@ -77,14 +77,11 @@ record("shares", "docs/demo/port-shares.mp4", async ({ page, caption, card, unca
   await btn("Redeem PORT").click({ timeout: 60_000 });
   await waitFor(text(/Shares paid back into escrow/));
   await page.evaluate(() => window.scrollTo({ top: 0, behavior: "smooth" }));
-  await caption("Same account, new owner", "Wallet B is the Core owner. Same Asset Signer, same positions, same mandate, same agent delegation. The escrow holds the supply again, ready for the next tokenize.");
-  await hold(10);
-  await page.getByRole("heading", { name: "Activity" }).scrollIntoViewIfNeeded();
-  await caption("Verified on-chain", "Tokenize and redeem are recorded only after the transaction confirmed, was signed by the claimed actor and touched the PORT.");
-  await hold(6);
+  await caption("Fungible when split, one asset when whole", "Same Asset Signer, same positions, same mandate, same agent. The escrow holds the supply again, so the account can be split as many times as its owners want. That is what MPL-404 is for.");
+  await hold(15);
 
   await caption("");
-  await card("Collect every share, own the account.", "PORT shares, built on mpl-hybrid.<br/><span style='font-size:18px;color:#8a8373'>ownport.xyz · Metaplex Core Execute · MPL Agent · mpl-hybrid</span>");
+  await card("One account. A million owners, or one.", "PORT shares, built on mpl-hybrid.<br/><span style='font-size:18px;color:#8a8373'>ownport.xyz · Metaplex Core Execute · MPL Agent · mpl-hybrid</span>");
   await hold(6);
 }).catch((e) => {
   console.error(e);

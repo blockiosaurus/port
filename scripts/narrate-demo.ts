@@ -48,18 +48,17 @@ const MAIN_CUES: Cue[] = [
 ];
 
 const SHARES_CUES: Cue[] = [
-  { after: "Tokenize your PORT", text: "A PORT update. Every PORT now carries an mpl-hybrid share escrow, so the whole account can be tokenized." },
-  { after: "Set up a PORT", text: "First, a funded account. Wallet A mints a PORT, deposits USDC, buys some Anthropic through Core Execute, and delegates execution to the agent." },
-  { after: "A funded PORT", text: "Three identities. Wallet A is the Core owner. The Asset Signer holds the positions. The agent may execute under a revocable delegation." },
-  { after: "Every PORT ships with a share escrow", text: "Here's what's new. The PORT was minted into its own collection with an mpl-hybrid escrow that already holds one million shares. The collection authority went to the System Program, so the terms can never change: no fee edits, no cheaper redemption, no backdoor." },
-  { after: "Tokenize", text: "Tokenize is one swap. The PORT goes into escrow and the full supply comes out to the owner." },
-  { after: "The escrow owns the deed", text: "The escrow is the Core owner now, and Wallet A holds a million shares. Owner actions are disabled; the escrow can sign nothing except the swap back." },
-  { after: "The agent keeps running", text: "But the agent's delegation survived. Run it, and it plans the rebalance for the shareholders and runs every policy check. Trades go through only when all of them pass, under a mandate nobody can change." },
-  { after: "Shares are plain SPL tokens", text: "The shares are ordinary SPL tokens. Wallet A sends all of them to Wallet B; anything short of the full supply carries no rights." },
-  { after: "Wallet B redeems", text: "Holding every share, Wallet B pays them back into escrow and takes the whole account out." },
-  { after: "Same account, new owner", text: "Same Asset Signer, same positions, same mandate, same agent. Only the owner changed, and the escrow holds the supply again, ready for the next tokenize." },
-  { after: "Verified on-chain", text: "Both swaps are in the history, recorded only after they confirmed on chain." },
-  { after: "Collect every share, own the account.", text: "Collect every share, own the account. PORT shares, built on mpl-hybrid." },
+  { after: "Tokenize your PORT", text: "A PORT update: you can now turn one account into a million fungible shares, and back." },
+  { after: "An account is all-or-nothing", text: "Here's the problem with owning an account as a single asset. You can sell the whole thing or nothing. Nobody can own a piece of it, a piece has no price, and your only buyer is someone who wants all of it." },
+  { after: "A managed account worth $2,500", text: "So here is one: Wallet A owns it, the Asset Signer holds the positions, and an agent runs the mandate. Let's make it divisible." },
+  { after: "Fractional ownership, built in", text: "Every PORT now ships with an mpl-hybrid escrow holding one million shares. They're plain SPL tokens: send them, sell them, pool them, post them as collateral. And because the full supply always redeems the account, a share is anchored to one millionth of its value. That floor is what makes the pieces worth something." },
+  { after: "One swap turns the account into shares", text: "Tokenizing is one swap. No wrapper contract, no new program. The account goes into escrow, the shares come out." },
+  { after: "A program holds it, not a custodian", text: "What holds the account is a program, not a custodian. Its terms were sealed at creation: it cannot change the fee, lower the redemption price, or release the account to anyone who doesn't bring every share. And while it's split, nobody can touch the mandate." },
+  { after: "A fund share, not a frozen asset", text: "This is the part a wrapper can't give you. The agent's delegation survived the move into escrow, so it keeps rebalancing and running every policy check for the shareholders. They own a managed account, not a snapshot of one." },
+  { after: "Liquidity", text: "And the shares are liquid. They move like any token: to a wallet, a pool, a lending market. Price discovery happens on the shares instead of on an illiquid whole. Here, all of them go to Wallet B." },
+  { after: "Whole again when someone wants it whole", text: "Whoever gathers the full supply can make it whole again. Wallet B pays the shares back and takes the account out intact." },
+  { after: "Fungible when split, one asset when whole", text: "Same Asset Signer, same positions, same mandate, same agent. The escrow holds the supply again, so the account can be split as many times as its owners want. Fungible when split, a single asset when whole. That's what MPL-404 is for." },
+  { after: "One account. A million owners, or one.", text: "One account. A million owners, or one. PORT shares, built on mpl-hybrid." },
 ];
 const CUES = DEMO === "main" ? MAIN_CUES : SHARES_CUES;
 

@@ -4,7 +4,7 @@
 
 > **Try it live:** **[ownport.xyz](https://ownport.xyz)** (a hosted fork of mainnet: real programs and PreStocks pools, no real funds; pick a burner wallet in the header, hit **Faucet**, and follow the steps below). Hosting notes: [`docs/deploy-droplet.md`](docs/deploy-droplet.md).
 >
-> **Demo video:** [youtu.be/Ix5DOrFZ-vk](https://youtu.be/Ix5DOrFZ-vk) · [`docs/demo/port-demo.mp4`](docs/demo/port-demo.mp4) (3:01, narrated; recorded by driving the real UI on the mainnet fork, waits for live quotes and confirmations fast-forwarded 8×; ends with tokenize → send shares → redeem) · **Shares feature cut:** [`docs/demo/port-shares.mp4`](docs/demo/port-shares.mp4) (1:40, narrated: tokenize, agent runs while escrowed, shares to Wallet B, redeem) · Evidence: [`docs/evidence/`](docs/evidence)
+> **Demo video:** [youtu.be/Ix5DOrFZ-vk](https://youtu.be/Ix5DOrFZ-vk) · [`docs/demo/port-demo.mp4`](docs/demo/port-demo.mp4) (3:01, narrated; recorded by driving the real UI on the mainnet fork, waits for live quotes and confirmations fast-forwarded 8×; ends with tokenize → send shares → redeem) · **Shares feature cut:** [`docs/demo/port-shares.mp4`](docs/demo/port-shares.mp4) (2:05, narrated: why tokenize an account; fractional ownership with a hard redemption floor, sealed escrow instead of a custodian, the agent keeps managing, liquid shares, whole again on redeem) · Evidence: [`docs/evidence/`](docs/evidence)
 
 ---
 
